@@ -6,9 +6,12 @@ category: "Tech / Craft"
 year: 2025
 status: reading
 progress: 25
-rating: 5
 format: "Companion Repo"
-repoPath: "book-the-art-of-code/README.md"
+repo: "kiquetal/book-the-art-of-code"
+sourcePath: "README.md"
+repoBranch: "main"
+cover: "../../assets/covers/the-art-of-code.png"
+coverAlt: "The Art of Code cover — Sandrine Banas, Manning"
 summary: "Master programmers think of systems as stories to be told, not programs to be written. A study of what makes code beautiful — followed with a Java-to-F# companion port."
 tags: ["clean-code", "functional-programming", "domain-modeling", "fsharp", "software-craft"]
 updated: 2026-08-11

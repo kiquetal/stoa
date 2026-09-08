@@ -2,14 +2,6 @@
 
 export type Status = "reading" | "completed" | "reference" | "planned";
 
-/** Terracotta filled/outlined asterisk-style rating glyphs (per DESIGN.md). */
-export function ratingGlyphs(rating?: number): string {
-  if (rating == null) return "";
-  const full = Math.round(rating);
-  const clamped = Math.max(0, Math.min(5, full));
-  return "✦".repeat(clamped) + "✧".repeat(5 - clamped);
-}
-
 export function statusLabel(status: Status): string {
   switch (status) {
     case "reading":

@@ -1,11 +1,7 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import {
-  ratingGlyphs,
-  statusLabel,
-  statusClasses,
-  type Status,
-} from "../lib/display";
+import { statusLabel, statusClasses, sectionWord, type Status } from "../lib/display";
+import { sourceUrl as buildSourceUrl } from "../site.config";
 
 interface Props {
   entry: CollectionEntry<"notes">;
@@ -15,6 +11,13 @@ const { entry } = Astro.props;
 const d = entry.data;
 const href = `/notes/${entry.id}`;
 const status = d.status as Status;
+const sourceUrl = d.repo ? buildSourceUrl(d.repo, d.sourcePath, d.repoBranch) : null;
+const sourcePath = d.sourcePath ?? "README.md";
+
+// Real signal: how many chapters/modules have notes completed.
+const totalSections = d.sections.length;
+const doneSections = d.sections.filter((s) => s.done).length;
+const kind = sectionWord(d.type);
 
 // Data attributes power the client-side search/filter on the index page.
 const searchBlob = [d.title, d.author, d.category, ...d.tags]
@@ -29,19 +32,19 @@ const searchBlob = [d.title, d.author, d.category, ...d.tags]
   data-status={status}
   data-category={d.category.toLowerCase()}
 >
-  {/* Top rule: category + rating */}
+  {/* Top rule: category + section completion */}
   <div class="flex items-start justify-between gap-space-sm">
     <span class="font-mono text-[11px] uppercase tracking-wider text-secondary flex items-center gap-1.5">
       <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
       {d.category}
     </span>
     {
-      d.rating != null && (
+      totalSections > 0 && (
         <span
-          class="font-mono text-secondary text-[13px] leading-none tracking-widest"
-          title={`${d.rating} / 5`}
+          class="font-mono text-[11px] text-on-surface-variant whitespace-nowrap"
+          title={`${doneSections} of ${totalSections} ${kind.toLowerCase()} synthesized`}
         >
-          {ratingGlyphs(d.rating)}
+          {doneSections}/{totalSections} {kind.toLowerCase()}
         </span>
       )
     }
@@ -93,14 +96,16 @@ const searchBlob = [d.title, d.author, d.category, ...d.tags]
     )
   }
 
-  {/* Lower shelf: repo path + status */}
+  {/* Lower shelf: source link + status */}
   <div class="mt-space-md pt-space-sm border-t border-surface-container-highest flex items-center justify-between gap-space-sm">
     <a
-      href={href}
+      href={sourceUrl ?? href}
+      target={sourceUrl ? "_blank" : undefined}
+      rel={sourceUrl ? "noreferrer" : undefined}
       class="inline-flex items-center gap-1.5 font-mono text-[12px] text-secondary hover:underline underline-offset-2 truncate"
     >
       <span class="material-symbols-outlined text-[14px]">code</span>
-      {d.repoPath ?? `notes/${entry.id}.md`}
+      {sourcePath}
     </a>
     <span
       class:list={[

@@ -2,13 +2,8 @@
 import { getCollection, render } from "astro:content";
 import { Image } from "astro:assets";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import {
-  ratingGlyphs,
-  statusLabel,
-  statusClasses,
-  sectionWord,
-  type Status,
-} from "../../lib/display";
+import { statusLabel, statusClasses, sectionWord, type Status } from "../../lib/display";
+import { sourceUrl as buildSourceUrl } from "../../site.config";
 
 export async function getStaticPaths() {
   const notes = await getCollection("notes");
@@ -23,7 +18,9 @@ const d = entry.data;
 const status = d.status as Status;
 const { Content, headings } = await render(entry);
 const kind = sectionWord(d.type);
-const repoPath = d.repoPath ?? `notes/${entry.id}.md`;
+// Working link to this note's source in its real study repo (if declared).
+const sourceUrl = d.repo ? buildSourceUrl(d.repo, d.sourcePath, d.repoBranch) : null;
+const sourcePath = d.sourcePath ?? "README.md";
 const doneCount = d.sections.filter((s) => s.done).length;
 ---
 
@@ -45,13 +42,19 @@ const doneCount = d.sections.filter((s) => s.done).length;
             <span class="font-serif italic text-sm text-on-surface truncate">{d.title}</span>
           </div>
         </div>
-        <a
-          href={d.repoUrl ?? "#"}
-          class="hidden sm:inline-flex items-center gap-1.5 px-space-xs py-1 rounded bg-surface-container font-mono text-[12px] text-secondary hover:bg-surface-container-high transition-colors shrink-0"
-        >
-          <span class="material-symbols-outlined text-[14px]">code</span>
-          {repoPath}
-        </a>
+        {
+          sourceUrl && (
+            <a
+              href={sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              class="hidden sm:inline-flex items-center gap-1.5 px-space-xs py-1 rounded bg-surface-container font-mono text-[12px] text-secondary hover:bg-surface-container-high transition-colors shrink-0"
+            >
+              <span class="material-symbols-outlined text-[14px]">code</span>
+              {sourcePath}
+            </a>
+          )
+        }
       </div>
     </header>
   </Fragment>
@@ -116,13 +119,13 @@ const doneCount = d.sections.filter((s) => s.done).length;
           </dl>
 
           {
-            d.rating != null && (
+            d.sections.length > 0 && (
               <div class="mt-space-sm pt-space-sm border-t border-surface-container-highest flex items-center gap-space-xs">
-                <span class="font-mono text-secondary text-[14px] tracking-widest">
-                  {ratingGlyphs(d.rating)}
+                <span class="material-symbols-outlined text-[16px] text-on-tertiary-container">
+                  checklist
                 </span>
                 <span class="font-mono text-[11px] text-on-surface-variant">
-                  ({d.rating.toFixed(1)} rating)
+                  {doneCount} of {d.sections.length} {kind.toLowerCase()} synthesized
                 </span>
               </div>
             )
@@ -160,8 +163,8 @@ const doneCount = d.sections.filter((s) => s.done).length;
           </div>
           <dl class="font-mono text-[12px] space-y-1.5">
             <div class="flex justify-between gap-space-sm">
-              <dt class="text-outline">Local Path</dt>
-              <dd class="text-secondary truncate">{repoPath}</dd>
+              <dt class="text-outline">Source</dt>
+              <dd class="text-secondary truncate">{sourcePath}</dd>
             </div>
             {d.updated && (
               <div class="flex justify-between gap-space-sm">
@@ -171,13 +174,15 @@ const doneCount = d.sections.filter((s) => s.done).length;
             )}
           </dl>
           {
-            d.repoUrl && (
+            sourceUrl && (
               <a
-                href={d.repoUrl}
+                href={sourceUrl}
+                target="_blank"
+                rel="noreferrer"
                 class="mt-space-md w-full inline-flex items-center justify-center gap-1.5 px-space-sm py-1.5 bg-ink text-surface rounded font-mono text-[11px] uppercase tracking-wider hover:bg-primary-container transition-colors"
               >
                 <span class="material-symbols-outlined text-[14px]">open_in_new</span>
-                Open in Repo
+                View Source on GitHub
               </a>
             )
           }

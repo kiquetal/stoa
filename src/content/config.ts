@@ -26,7 +26,6 @@ const notes = defineCollection({
         .default("reading"),
       // 0..100, drives the progress bar
       progress: z.number().min(0).max(100).default(0),
-      rating: z.number().min(0).max(5).optional(),
 
       // --- Bibliographic / provenance ---
       format: z.string().optional(), // "Hardcover", "PDF / Web", "EPUB"...
@@ -34,9 +33,10 @@ const notes = defineCollection({
       currentPage: z.number().optional(),
       isbn: z.string().optional(),
       publisher: z.string().optional(),
-      // Where the raw markdown lives, shown as an archival breadcrumb
-      repoPath: z.string().optional(), // e.g. "notes/tech/ddia.md"
-      repoUrl: z.string().url().optional(),
+      // Where the raw markdown lives — powers the working "View Source" links.
+      repo: z.string().optional(), // "owner/name" or bare "name", e.g. "kiquetal/domain-modeling-made-functional"
+      sourcePath: z.string().optional(), // file within the repo, e.g. "notes/bounded-context.md"
+      repoBranch: z.string().optional(),
 
       // --- Discovery ---
       tags: z.array(z.string()).default([]),
