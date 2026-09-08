@@ -264,27 +264,53 @@ const doneCount = d.sections.filter((s) => s.done).length;
                 </span>
               </div>
               <div class="space-y-space-sm">
-                {d.sections.map((s) => (
-                  <div class="bg-surface-container-low border border-surface-container-highest rounded-lg p-space-md">
-                    <div class="flex items-baseline gap-space-sm">
-                      {s.label && (
-                        <span class="font-mono text-[12px] text-secondary shrink-0">{s.label}</span>
-                      )}
-                      <h3 class="font-serif text-lg text-on-surface">{s.title}</h3>
-                      {s.done && (
-                        <span class="material-symbols-outlined text-[16px] text-on-tertiary-container ml-auto">
-                          task_alt
+                {d.sections.map((s) => {
+                  const sectionUrl =
+                    d.repo && s.sourcePath
+                      ? buildSourceUrl(d.repo, s.sourcePath, d.repoBranch)
+                      : null;
+                  const Tag = sectionUrl ? "a" : "div";
+                  return (
+                    <Tag
+                      href={sectionUrl ?? undefined}
+                      target={sectionUrl ? "_blank" : undefined}
+                      rel={sectionUrl ? "noreferrer" : undefined}
+                      class:list={[
+                        "group block bg-surface-container-low border border-surface-container-highest rounded-lg p-space-md transition-colors",
+                        sectionUrl && "hover:border-secondary",
+                      ]}
+                    >
+                      <div class="flex items-baseline gap-space-sm">
+                        {s.label && (
+                          <span class="font-mono text-[12px] text-secondary shrink-0">{s.label}</span>
+                        )}
+                        <h3 class:list={["font-serif text-lg text-on-surface", sectionUrl && "group-hover:text-terracotta transition-colors"]}>
+                          {s.title}
+                        </h3>
+                        <span class="ml-auto flex items-center gap-space-xs shrink-0">
+                          {s.done && (
+                            <span class="material-symbols-outlined text-[16px] text-on-tertiary-container">
+                              task_alt
+                            </span>
+                          )}
+                          {sectionUrl && (
+                            <span class="material-symbols-outlined text-[15px] text-outline group-hover:text-secondary transition-colors">
+                              open_in_new
+                            </span>
+                          )}
                         </span>
+                      </div>
+                      {s.note && (
+                        <p class="font-serif italic text-sm text-on-surface-variant mt-1">{s.note}</p>
                       )}
-                    </div>
-                    {s.note && (
-                      <p class="font-serif italic text-sm text-on-surface-variant mt-1">{s.note}</p>
-                    )}
-                    {s.meta && (
-                      <p class="font-mono text-[11px] text-outline mt-space-xs">{s.meta}</p>
-                    )}
-                  </div>
-                ))}
+                      {(sectionUrl || s.meta) && (
+                        <p class="font-mono text-[11px] text-outline mt-space-xs">
+                          {sectionUrl ? s.sourcePath : s.meta}
+                        </p>
+                      )}
+                    </Tag>
+                  );
+                })}
               </div>
             </section>
           )

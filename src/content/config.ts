@@ -53,6 +53,9 @@ const notes = defineCollection({
             title: z.string(),
             note: z.string().optional(), // one-line synthesis
             meta: z.string().optional(), // "1,410 words • ..."
+            // Path to this section's source file within the note's repo,
+            // e.g. "notes/bounded-context.md" — makes the entry a link.
+            sourcePath: z.string().optional(),
             done: z.boolean().default(false),
           }),
         )

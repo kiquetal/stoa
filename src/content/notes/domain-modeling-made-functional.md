@@ -23,42 +23,42 @@ sections:
   - label: "Note"
     title: "Bounded Contexts"
     note: "Semantic boundaries, ubiquitous language, context maps, DTOs & the anti-corruption layer."
-    meta: "notes/bounded-context.md"
+    sourcePath: "notes/bounded-context.md"
     done: true
   - label: "Note"
     title: "Modeling the Domain"
     note: "Product vs. sum types, records, construction/deconstruction, smart constructors, currying."
-    meta: "notes/modeling-domain.md"
+    sourcePath: "notes/modeling-domain.md"
     done: true
   - label: "Note"
     title: "Domain Modeling with Types"
     note: "Algebraic data types to make illegal states unrepresentable."
-    meta: "notes/modeling-domains-with-types.md"
+    sourcePath: "notes/modeling-domains-with-types.md"
     done: true
   - label: "Note"
     title: "Optional Values, Errors & Collections"
     note: "Option, Result monads, unit, list cons pattern matching; fail-fast vs. error accumulation."
-    meta: "notes/modeling-optional-errors-collections.md"
+    sourcePath: "notes/modeling-optional-errors-collections.md"
     done: true
   - label: "Note"
     title: "Code Structure Within a Context"
     note: "Folder layout, grouping by workflow, F# compilation-order as an architectural constraint."
-    meta: "notes/code-structure-within-a-bounded-context.md"
+    sourcePath: "notes/code-structure-within-a-bounded-context.md"
     done: true
   - label: "Note"
     title: "Functional Architecture"
     note: "Input-Process-Output, pure vs. impure, Railway-Oriented Programming."
-    meta: "notes/functional-architecture.md"
+    sourcePath: "notes/functional-architecture.md"
     done: true
   - label: "Note"
     title: "Workflows Within a Context"
     note: "Business actions as mathematical functional signatures producing domain events."
-    meta: "notes/worklows-within-a-bounded.context.md"
+    sourcePath: "notes/worklows-within-a-bounded.context.md"
     done: true
   - label: "Note"
     title: "Organizing Types in Files & Projects"
     note: "Declaration order and full functional pipelines."
-    meta: "notes/organizing-types-in-files-and-projects.md"
+    sourcePath: "notes/organizing-types-in-files-and-projects.md"
     done: false
 ---
 
