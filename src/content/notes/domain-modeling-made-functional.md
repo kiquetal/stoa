@@ -19,6 +19,75 @@ updated: 2026-06-25
 anchor:
   label: "Design Mantra"
   text: "Make illegal states unrepresentable. If it compiles, it's valid — business rules are baked directly into the type system."
+diagrams:
+  - label: "Fig. 1"
+    title: "Inbound data flow"
+    caption: "Crossing into the domain boundary: raw request → inbound DTO → translation layer → pure domain type."
+    sourcePath: "notes/bounded-context.md"
+    ascii: |2
+           [At the System Edge]                                                   [Inside Domain Boundary]
+      +-----------------------------+      +----------------------+      +----------------------+      +--------------------------+
+      | Raw JSON / XML Request      | ---> | Inbound DTO          | ---> | Translation Layer    | ---> | Pure Domain Type         |
+      | (e.g., {"email": "..."})    |      | (CreateUserRequestDto) |    | (UserMapping.toDomain)|     | (User: Email, Password)  |
+      +-----------------------------+      +----------------------+      +----------------------+      +--------------------------+
+  - label: "Fig. 2"
+    title: "Outbound data flow"
+    caption: "Crossing out of the domain boundary: pure outcome → boundary translation → outbound DTO → serialized HTTP response."
+    sourcePath: "notes/bounded-context.md"
+    ascii: |2
+         [Inside Domain Boundary]                                                    [At the System Edge]
+      +-----------------------------+      +----------------------+      +----------------------+      +--------------------------+
+      | Pure Domain Outcome         | ---> | Boundary Translation | ---> | Outbound Response/DTO| ---> | HTTP Serialized Response |
+      | (e.g., UserRegistered user) |      | (Pattern Match)      |      | (CreatedResponse)    |      | (Status 201 + JSON body) |
+      +-----------------------------+      +----------------------+      +----------------------+      +--------------------------+
+  - label: "Fig. 3"
+    title: "Anti-Corruption Layer (ACL)"
+    caption: "The ACL receives an untrusted external DTO over the wire and parses it via a smart constructor into a guaranteed-valid pure domain object."
+    sourcePath: "notes/functional-architecture.md"
+    ascii: |2
+             [External Bounded Context]                          [Our Bounded Context]
+      +-------------------------------------+             +-----------------------------------+
+      |                                     |             |    Anti-Corruption Layer (ACL)    |
+      |   External Raw DTO (Untrusted)      | ===(Wire)==>| Received DTO -> Map/Parse ->      |
+      |   {"email": "john@example.com"}     |             | (Raw String)    (Smart Constructor|
+      +-------------------------------------+             +-----------------------------------+
+                                                                            |
+                                                                            v
+                                                                  [Pure Domain Object]
+                                                                  EmailAddress("john@example.com")
+                                                                  (Guaranteed valid & pure)
+  - label: "Fig. 4"
+    title: "Functional Onion architecture"
+    caption: "All dependencies point inward. The core (Types.fs / Domain.fs) has zero knowledge of DBs, ORMs, or JSON; adapters live at the outer edge."
+    sourcePath: "notes/code-structure-within-a-bounded-context.md"
+    ascii: |2
+      +-------------------------------------------------+
+      |             OUTER INFRASTRUCTURE EDGE           |
+      |   - Controllers / HTTP Router (API Edge)        |
+      |   - Database SQL Access (Storage Edge)          |
+      |       +---------------------------------+       |
+      |       |         ADAPTERS & DI           |       |
+      |       |   (Program.fs - Composition Root)       |
+      |       |       +-----------------+       |       |
+      |       |       |  PURE WORKFLOWS |       |       |
+      |       |       | (Implementation)|       |       |
+      |       |       |       +-------+ |       |       |
+      |       |       |       | CORE  | |       |       |
+      |       |       |       | TYPES | |       |       |
+      |       |       |       +-------+ |       |       |
+      |       |       +-----------------+       |       |
+      |       +---------------------------------+       |
+      +-------------------------------------------------+
+  - label: "Fig. 5"
+    title: "Decisions vs. effects"
+    caption: "The pure workflow only returns events as data; the system edge matches on event types and performs the real publishing to Kafka/email/DB."
+    sourcePath: "notes/worklows-within-a-bounded.context.md"
+    ascii: |2
+        [Core Domain Boundary]                                            [At the System Edge]
+      +------------------------+      +-------------------+      +--------------------+      +-----------------------+
+      |  Pure Workflow Runs    | ---> |  Returns Events   | ---> |  Boundary Matches  | ---> |  Actually Publishes   |
+      | (No publishing inside) |      |  (As raw data)    |      |  On Event Types    |      |  (To Kafka/Email/DB)  |
+      +------------------------+      +-------------------+      +--------------------+      +-----------------------+
 quiz:
   - question: "How do bounded contexts communicate with each other, and why?"
     answer: "Asynchronously via domain events. This gives loose coupling (no knowledge of internals), temporal decoupling (the receiver can be offline), and autonomy (each context owns its storage and evolves independently)."
@@ -41,6 +110,35 @@ quiz:
   - question: "Fail-fast vs. error accumulation: when do you use each?"
     answer: "Monadic Result.bind is fail-fast — it stops at the first error, good for dependent steps. An applicative Validation accumulates all errors (concatenating error lists), good for independent field validations where you want every problem reported at once."
     sourcePath: "notes/modeling-optional-errors-collections.md"
+  - question: "In pure functional workflows, what does a workflow do with domain events — and who actually publishes them?"
+    answer: "The workflow does NOT publish events. It only creates and returns them as pure data (e.g. Ok [ OrderPlaced ...; BillCreated ... ]). The System Edge (Composition Root / Program.fs / API controller) matches on those event types and performs the real publishing to Kafka, email, or the DB."
+    hint: "Separate decisions from effects."
+    sourcePath: "notes/worklows-within-a-bounded.context.md"
+  - question: "Explain why returning events as data (instead of publishing them inside the workflow) makes the code more testable."
+    answer: "Because the workflow becomes a pure function with no dependency on an EventBus or publisher, you can test it without mocks — just call it and assert on the returned list of events. The return type also explicitly documents every business outcome, whereas an in-method eventBus.publish(...) hides the side-effect in the signature."
+    feynman: true
+    sourcePath: "notes/worklows-within-a-bounded.context.md"
+  - question: "What is Persistence Ignorance, and how does the Onion/Hexagonal architecture enforce it?"
+    answer: "Persistence Ignorance means the domain model is built only from domain concepts and has zero awareness of databases or persistence mechanisms. The Onion architecture enforces it with the inward-dependency rule: each layer depends only on inner layers, so the core (Types.fs / Domain.fs) has no dependency on JSON libraries, ORMs, or DB drivers — those live at the outer edge."
+    hint: "All dependencies point inward."
+    sourcePath: "notes/code-structure-within-a-bounded-context.md"
+  - question: "How does F# achieve dependency injection without a DI container like Spring?"
+    answer: "Through currying and partial application. A workflow accepts its dependencies as ordinary function parameters (e.g. getPrice: ProductCode -> Price as the first arg). At the Composition Root you 'bake in' the real implementation by supplying just that argument — priceOrder sqlGetPrice — yielding a specialized function. No reflection, @Autowired, or runtime container needed, and the compiler forces you to wire new dependencies at build time."
+    sourcePath: "notes/code-structure-within-a-bounded-context.md"
+  - question: "Why does F# force you to think about the order of your type declarations?"
+    answer: "F# has strict declaration-order rules: a type can't reference another type defined further down the same file, and a file earlier in the compilation order can't reference a file later in it. The standard solution is to put all domain types in one file (Types.fs / Domain.fs) with simple types at the top and top-level types at the bottom, then place the functions that depend on them later in the compilation order."
+    hint: "Compilation order is an architectural constraint."
+    sourcePath: "notes/organizing-types-in-files-and-projects.md"
+  - question: "Why does a functional workflow never accept a DTO directly, and where does DTO-to-domain translation happen?"
+    answer: "The core workflow operates only on pure, already-validated domain types so it stays framework-agnostic. Translation from an inbound DTO to a domain object happens at the inbound edge via the Anti-Corruption Layer (a smart-constructor / parse step); on the way out, domain objects and events are translated back into outbound DTOs (DB rows, event messages, HTTP responses) at the outbound edge."
+    sourcePath: "notes/functional-architecture.md"
+  - question: "Why can't you use `void` in a functional pipeline, and what replaces it in F# and in Java 21?"
+    answer: "Every function must return something to behave as a mathematical map, so 'no value' is modeled with the unit type — a type with exactly one value, written (). F# compiles unit to void under the hood but treats it as a first-class value. In Java 21 you can't use void as a generic type argument, so you define a custom record like `record Unit() {}` to enable monadic pipelines such as Result<Unit, DomainError>."
+    hint: "() vs. void."
+    sourcePath: "notes/modeling-optional-errors-collections.md"
+  - question: "When mapping the domain to Java 21, how is an F# discriminated union represented, and what makes the match safe?"
+    answer: "A sum type becomes a sealed interface permitting a fixed set of record implementations. Matching uses a switch expression with record patterns; because the interface is sealed, the compiler performs an exhaustiveness check and refuses to compile if a case is unhandled."
+    sourcePath: "notes/functional-architecture.md"
 sections:
   - label: "Note"
     title: "Bounded Contexts"

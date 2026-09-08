@@ -253,6 +253,95 @@ const doneCount = d.sections.filter((s) => s.done).length;
           <Content />
         </article>
 
+        {/* Figures — tabbed Mermaid / ASCII diagrams from frontmatter */}
+        {
+          d.diagrams.length > 0 && (
+            <section class="mt-space-3xl max-w-reading">
+              <div class="flex items-baseline justify-between mb-space-md">
+                <h2 class="font-serif text-2xl text-on-surface">Figures</h2>
+                <span class="font-mono text-[11px] text-on-surface-variant">
+                  {d.diagrams.length} {d.diagrams.length === 1 ? "diagram" : "diagrams"}
+                </span>
+              </div>
+
+              <div
+                id="figures"
+                class="bg-surface-container-low border border-surface-container-highest rounded-lg overflow-hidden"
+              >
+                {/* Tab strip */}
+                <div
+                  role="tablist"
+                  aria-label="Figures"
+                  class="flex items-stretch gap-1 overflow-x-auto border-b border-surface-container-highest px-space-xs pt-space-xs"
+                >
+                  {d.diagrams.map((fig, i) => (
+                    <button
+                      role="tab"
+                      id={`fig-tab-${i}`}
+                      aria-controls={`fig-panel-${i}`}
+                      aria-selected={i === 0 ? "true" : "false"}
+                      data-fig-tab={i}
+                      class:list={[
+                        "fig-tab shrink-0 px-space-sm py-1.5 rounded-t font-mono text-[11px] uppercase tracking-wider transition-colors",
+                        i === 0 ? "is-active" : "",
+                      ]}
+                    >
+                      {fig.label ?? `Fig. ${i + 1}`}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Panels */}
+                {d.diagrams.map((fig, i) => {
+                  const figUrl =
+                    d.repo && fig.sourcePath
+                      ? buildSourceUrl(d.repo, fig.sourcePath, d.repoBranch)
+                      : null;
+                  return (
+                    <figure
+                      role="tabpanel"
+                      id={`fig-panel-${i}`}
+                      aria-labelledby={`fig-tab-${i}`}
+                      data-fig-panel={i}
+                      hidden={i !== 0}
+                      class="p-space-md"
+                    >
+                      <figcaption class="flex items-baseline gap-space-sm mb-space-sm">
+                        {fig.title && (
+                          <span class="font-serif text-lg text-on-surface">{fig.title}</span>
+                        )}
+                        {figUrl && (
+                          <a
+                            href={figUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            class="ml-auto shrink-0 inline-flex items-center gap-1 font-mono text-[11px] text-secondary hover:underline underline-offset-2"
+                          >
+                            <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+                            {fig.sourcePath}
+                          </a>
+                        )}
+                      </figcaption>
+                      <div class="figure-canvas overflow-x-auto rounded bg-surface-container-lowest border border-surface-container-highest p-space-md">
+                        {fig.mermaid ? (
+                          <pre class="mermaid">{fig.mermaid}</pre>
+                        ) : (
+                          <pre class="figure-ascii">{fig.ascii}</pre>
+                        )}
+                      </div>
+                      {fig.caption && (
+                        <p class="font-serif italic text-sm text-on-surface-variant mt-space-sm">
+                          {fig.caption}
+                        </p>
+                      )}
+                    </figure>
+                  );
+                })}
+              </div>
+            </section>
+          )
+        }
+
         {/* Synthesized chapters / modules */}
         {
           d.sections.length > 0 && (
@@ -388,6 +477,83 @@ const doneCount = d.sections.filter((s) => s.done).length;
   </main>
 </BaseLayout>
 
+<script>
+  // Figures: tabbed panels with lazy Mermaid rendering.
+  // Mermaid is loaded client-side (no headless-browser build dep) and each
+  // diagram is rendered only when its tab is first shown — rendering a hidden,
+  // zero-width panel produces a broken/collapsed SVG.
+  const figuresRoot = document.getElementById("figures");
+  if (figuresRoot) {
+    const tabs = Array.from(
+      figuresRoot.querySelectorAll<HTMLButtonElement>(".fig-tab"),
+    );
+    const panels = Array.from(
+      figuresRoot.querySelectorAll<HTMLElement>("[data-fig-panel]"),
+    );
+
+    let mermaidLoaded: Promise<any> | null = null;
+    async function ensureMermaid() {
+      if (!mermaidLoaded) {
+        mermaidLoaded = import(
+          "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
+        ).then(({ default: mermaid }) => {
+          mermaid.initialize({
+            startOnLoad: false,
+            securityLevel: "strict",
+            theme: "base",
+            fontFamily: "JetBrains Mono, monospace",
+            themeVariables: {
+              background: "#fef8f3",
+              primaryColor: "#ede6df",
+              primaryBorderColor: "#a23e18",
+              primaryTextColor: "#1d1b19",
+              lineColor: "#44474a",
+              secondaryColor: "#f2ede8",
+              tertiaryColor: "#f2ede8",
+            },
+          });
+          return mermaid;
+        });
+      }
+      return mermaidLoaded;
+    }
+
+    async function renderPanel(panel: HTMLElement) {
+      const node = panel.querySelector<HTMLElement>("pre.mermaid");
+      if (!node || node.dataset.rendered === "true") return;
+      node.dataset.rendered = "true";
+      const mermaid = await ensureMermaid();
+      try {
+        await mermaid.run({ nodes: [node] });
+      } catch {
+        node.dataset.rendered = ""; // allow a retry on next activation
+      }
+    }
+
+    function activate(index: number) {
+      tabs.forEach((t, i) => {
+        const on = i === index;
+        t.classList.toggle("is-active", on);
+        t.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      panels.forEach((p, i) => {
+        p.hidden = i !== index;
+      });
+      const active = panels[index];
+      if (active) renderPanel(active);
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        activate(Number(tab.dataset.figTab));
+      });
+    });
+
+    // Render the initially-visible panel.
+    activate(0);
+  }
+</script>
+
 <style is:global>
   /* Editorial "commonplace" rendering for the markdown notes body. */
   .prose-notes {
@@ -494,5 +660,54 @@ const doneCount = d.sections.filter((s) => s.done).length;
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+
+  /* Figures: tab strip. */
+  .fig-tab {
+    color: #44474a;
+    border: 1px solid transparent;
+    border-bottom: 0;
+    margin-bottom: -1px;
+    background: transparent;
+    cursor: pointer;
+  }
+  .fig-tab:hover {
+    color: #1d1b19;
+  }
+  .fig-tab.is-active {
+    color: #1d1b19;
+    background: #fffdfb;
+    border-color: #e3dcd4;
+  }
+
+  /* Figures: hide raw Mermaid source until rendered, then center the SVG. */
+  pre.mermaid {
+    margin: 0;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    font-family: "JetBrains Mono", monospace;
+    text-align: center;
+    color: transparent; /* avoid flash of raw source before render */
+  }
+  pre.mermaid[data-processed="true"] {
+    color: inherit;
+  }
+  pre.mermaid svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Figures: ASCII / box-art diagrams — preserve whitespace, monospace. */
+  pre.figure-ascii {
+    margin: 0;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #2c2a28;
+    white-space: pre;
   }
 </style>

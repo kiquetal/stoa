@@ -21,7 +21,14 @@ const doneSections = d.sections.filter((s) => s.done).length;
 const kind = sectionWord(d.type);
 
 // Data attributes power the client-side search/filter on the index page.
-const searchBlob = [d.title, d.author, d.category, ...d.tags]
+const searchBlob = [
+  d.title,
+  d.author,
+  d.category,
+  d.summary,
+  ...d.tags,
+  ...d.sections.flatMap((s) => [s.title, s.note, s.meta]),
+]
   .filter(Boolean)
   .join(" ")
   .toLowerCase();
