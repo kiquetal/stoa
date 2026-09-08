@@ -315,6 +315,74 @@ const doneCount = d.sections.filter((s) => s.done).length;
             </section>
           )
         }
+
+        {/* Recall Deck — active-recall Q/A (from the qa-generator agent) */}
+        {
+          d.quiz.length > 0 && (
+            <section class="mt-space-3xl max-w-reading">
+              <div class="flex items-baseline justify-between mb-space-md">
+                <h2 class="font-serif text-2xl text-on-surface">Recall Deck</h2>
+                <span class="font-mono text-[11px] text-on-surface-variant">
+                  {d.quiz.length} prompts · click to reveal
+                </span>
+              </div>
+              <p class="font-serif italic text-sm text-on-surface-variant mb-space-md">
+                Answer from memory before revealing. Retrieval beats re-reading.
+              </p>
+              <div class="space-y-space-sm">
+                {d.quiz.map((q, i) => {
+                  const qUrl =
+                    d.repo && q.sourcePath
+                      ? buildSourceUrl(d.repo, q.sourcePath, d.repoBranch)
+                      : null;
+                  return (
+                    <details class="group bg-surface-container-low border border-surface-container-highest rounded-lg open:border-secondary transition-colors">
+                      <summary class="cursor-pointer list-none p-space-md flex items-start gap-space-sm">
+                        <span class="font-mono text-[12px] text-secondary shrink-0 mt-0.5">
+                          {q.feynman ? "◈" : String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span class="font-serif text-lg text-on-surface flex-1">
+                          {q.question}
+                        </span>
+                        <span class="material-symbols-outlined text-[18px] text-outline group-open:rotate-180 transition-transform shrink-0">
+                          expand_more
+                        </span>
+                      </summary>
+                      <div class="px-space-md pb-space-md pl-[2.5rem]">
+                        {q.feynman && (
+                          <p class="font-mono text-[10px] uppercase tracking-wider text-secondary mb-space-xs">
+                            Feynman · explain it simply
+                          </p>
+                        )}
+                        {q.hint && (
+                          <p class="font-serif italic text-sm text-on-surface-variant mb-space-xs">
+                            Hint: {q.hint}
+                          </p>
+                        )}
+                        <div class="border-l-2 border-secondary pl-space-sm">
+                          <p class="font-serif text-[17px] leading-relaxed text-on-surface">
+                            {q.answer}
+                          </p>
+                        </div>
+                        {qUrl && (
+                          <a
+                            href={qUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            class="mt-space-xs inline-flex items-center gap-1 font-mono text-[11px] text-secondary hover:underline underline-offset-2"
+                          >
+                            <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+                            {q.sourcePath}
+                          </a>
+                        )}
+                      </div>
+                    </details>
+                  );
+                })}
+              </div>
+            </section>
+          )
+        }
       </div>
     </div>
   </main>

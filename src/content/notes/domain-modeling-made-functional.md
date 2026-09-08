@@ -19,6 +19,28 @@ updated: 2026-06-25
 anchor:
   label: "Design Mantra"
   text: "Make illegal states unrepresentable. If it compiles, it's valid — business rules are baked directly into the type system."
+quiz:
+  - question: "How do bounded contexts communicate with each other, and why?"
+    answer: "Asynchronously via domain events. This gives loose coupling (no knowledge of internals), temporal decoupling (the receiver can be offline), and autonomy (each context owns its storage and evolves independently)."
+    hint: "Think about what a service publishes, not what it calls."
+    sourcePath: "notes/bounded-context.md"
+  - question: "What is the difference between a Domain Type and a DTO, and where does the translation live?"
+    answer: "Domain types enforce invariants and encapsulate behavior; DTOs are flat, primitive, public-only structures built for serialization. Translation happens strictly at the system edges (ports & adapters) via an Anti-Corruption Layer, keeping the core domain free of JSON/ORM/web dependencies."
+    sourcePath: "notes/bounded-context.md"
+  - question: "What is the difference between a product type and a sum type in F#?"
+    answer: "A product type (record, 'AND') holds several named values that all exist at once. A sum type / discriminated union ('OR') is exactly one of several tagged cases."
+    hint: "AND vs. OR."
+    sourcePath: "notes/modeling-domain.md"
+  - question: "Why does F#'s Result.map put the Result container as its LAST argument?"
+    answer: "Because functions are curried and arrows associate right, partially applying map with just the mapper yields a Result<'T> -> Result<'U> transformer. Putting the container last lets the pipeline operator |> feed it directly."
+    sourcePath: "notes/modeling-domain.md"
+  - question: "Explain a smart constructor as if to a new teammate."
+    answer: "Make the type's real constructor private and expose a `create` function that validates the input and returns a Result — Ok wrapping a guaranteed-valid value, or Error describing why it failed. Because nothing else can build the type, an invalid instance can never exist."
+    feynman: true
+    sourcePath: "notes/modeling-domain.md"
+  - question: "Fail-fast vs. error accumulation: when do you use each?"
+    answer: "Monadic Result.bind is fail-fast — it stops at the first error, good for dependent steps. An applicative Validation accumulates all errors (concatenating error lists), good for independent field validations where you want every problem reported at once."
+    sourcePath: "notes/modeling-optional-errors-collections.md"
 sections:
   - label: "Note"
     title: "Bounded Contexts"
