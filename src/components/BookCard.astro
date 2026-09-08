@@ -1,0 +1,114 @@
+---
+import type { CollectionEntry } from "astro:content";
+import {
+  ratingGlyphs,
+  statusLabel,
+  statusClasses,
+  type Status,
+} from "../lib/display";
+
+interface Props {
+  entry: CollectionEntry<"notes">;
+}
+
+const { entry } = Astro.props;
+const d = entry.data;
+const href = `/notes/${entry.id}`;
+const status = d.status as Status;
+
+// Data attributes power the client-side search/filter on the index page.
+const searchBlob = [d.title, d.author, d.category, ...d.tags]
+  .filter(Boolean)
+  .join(" ")
+  .toLowerCase();
+---
+
+<article
+  class="book-card group flex flex-col bg-surface-container-low border border-surface-container-highest rounded-lg p-space-md transition-colors hover:border-outline-variant"
+  data-search={searchBlob}
+  data-status={status}
+  data-category={d.category.toLowerCase()}
+>
+  {/* Top rule: category + rating */}
+  <div class="flex items-start justify-between gap-space-sm">
+    <span class="font-mono text-[11px] uppercase tracking-wider text-secondary flex items-center gap-1.5">
+      <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+      {d.category}
+    </span>
+    {
+      d.rating != null && (
+        <span
+          class="font-mono text-secondary text-[13px] leading-none tracking-widest"
+          title={`${d.rating} / 5`}
+        >
+          {ratingGlyphs(d.rating)}
+        </span>
+      )
+    }
+  </div>
+
+  {/* Title + author */}
+  <a href={href} class="mt-space-sm block">
+    <h3 class="font-serif text-xl leading-snug text-on-surface group-hover:text-terracotta transition-colors">
+      {d.title}
+    </h3>
+    {
+      d.author && (
+        <p class="font-serif italic text-sm text-on-surface-variant mt-0.5">
+          {d.author}
+          {d.year ? ` · ${d.year}` : ""}
+        </p>
+      )
+    }
+  </a>
+
+  {/* Summary */}
+  {
+    d.summary && (
+      <p class="font-serif text-[15px] leading-relaxed text-on-surface-variant mt-space-sm line-clamp-3">
+        {d.summary}
+      </p>
+    )
+  }
+
+  {/* Progress bar (reading) */}
+  {
+    status === "reading" && (
+      <div class="mt-space-md">
+        <div class="flex items-center justify-between font-mono text-[11px] text-on-surface-variant mb-1">
+          <span class="uppercase tracking-wider">{d.progress}% in flight</span>
+          {d.pages && d.currentPage && (
+            <span>
+              p. {d.currentPage} / {d.pages}
+            </span>
+          )}
+        </div>
+        <div class="h-[3px] w-full bg-surface-container-highest rounded-full overflow-hidden">
+          <div
+            class="h-full bg-secondary"
+            style={`width: ${d.progress}%`}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  {/* Lower shelf: repo path + status */}
+  <div class="mt-space-md pt-space-sm border-t border-surface-container-highest flex items-center justify-between gap-space-sm">
+    <a
+      href={href}
+      class="inline-flex items-center gap-1.5 font-mono text-[12px] text-secondary hover:underline underline-offset-2 truncate"
+    >
+      <span class="material-symbols-outlined text-[14px]">code</span>
+      {d.repoPath ?? `notes/${entry.id}.md`}
+    </a>
+    <span
+      class:list={[
+        "shrink-0 px-space-xs py-0.5 rounded font-mono text-[10px] uppercase tracking-wider font-medium",
+        statusClasses(status),
+      ]}
+    >
+      {statusLabel(status)}
+    </span>
+  </div>
+</article>

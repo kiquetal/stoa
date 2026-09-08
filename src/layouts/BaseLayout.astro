@@ -1,0 +1,152 @@
+---
+export interface Props {
+  title?: string;
+  description?: string;
+  /** Show the fixed catalog header + green priming ribbon (index page). */
+  variant?: "catalog" | "reading";
+}
+
+const {
+  title = "Curator's Index",
+  description = "An archival ledger of ongoing intellectual inquiries — book & course notes bound to Markdown.",
+  variant = "catalog",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+    />
+    <style is:global>
+      @layer base {
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+        }
+        body {
+          overscroll-behavior: none;
+        }
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+    </style>
+  </head>
+  <body class="bg-surface font-sans text-on-surface antialiased min-h-screen selection:bg-secondary-fixed selection:text-on-secondary-fixed">
+    <slot name="header">
+      {
+        variant === "catalog" && (
+          <>
+            {/* Top Archival Navigation Bar */}
+            <header class="sticky top-0 left-0 w-full z-50 bg-surface/90 backdrop-blur-md border-b border-surface-container-highest">
+              <div class="max-w-catalog mx-auto px-gutter-mobile lg:px-gutter-desktop flex flex-col pt-space-xs pb-space-xs gap-space-2xs">
+                <div class="flex items-center justify-between gap-space-md">
+                  <div class="flex items-baseline gap-space-sm">
+                    <a class="flex items-baseline gap-space-2xs group" href="/">
+                      <span class="text-xl text-on-surface tracking-tight font-serif font-medium">
+                        Curator's Index
+                      </span>
+                      <span class="font-serif text-sm text-on-surface-variant italic">
+                        / commonplace
+                      </span>
+                    </a>
+                  </div>
+                  <div class="flex items-center gap-space-sm">
+                    <div class="relative hidden md:flex items-center">
+                      <span class="material-symbols-outlined absolute left-space-xs text-on-surface-variant text-[16px] pointer-events-none">
+                        search
+                      </span>
+                      <input
+                        id="global-search"
+                        class="pl-7 pr-space-xs py-1 text-[13px] font-mono bg-surface-container rounded border border-surface-container-highest text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest w-60 lg:w-72 transition-all"
+                        placeholder="Search title, author, topic..."
+                        type="text"
+                      />
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                      <span class="material-symbols-outlined text-on-primary text-[18px]">
+                        person
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <nav class="flex items-center gap-space-md lg:gap-space-lg whitespace-nowrap overflow-x-auto pt-space-2xs">
+                  <a class="font-mono text-[11px] uppercase tracking-wider text-secondary border-b-2 border-secondary font-medium pb-1.5" href="/">
+                    All Volumes
+                  </a>
+                  <a class="font-mono text-[11px] uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors pb-1.5" href="/#reading">
+                    Currently Reading
+                  </a>
+                  <a class="font-mono text-[11px] uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors pb-1.5" href="/#technical">
+                    Technical &amp; Systems
+                  </a>
+                  <a class="font-mono text-[11px] uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors pb-1.5" href="/#completed">
+                    Completed Archive
+                  </a>
+                </nav>
+              </div>
+            </header>
+
+            {/* Green Cognitive Priming Ribbon */}
+            <div class="w-full bg-moss-deep text-moss-text border-b border-moss-line px-gutter-mobile lg:px-gutter-desktop py-2 font-mono text-xs">
+              <div class="max-w-catalog mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <div class="flex items-center gap-3 flex-wrap">
+                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-moss-mid text-moss-pale font-medium text-[11px] tracking-wide uppercase">
+                    <span class="w-2 h-2 rounded-full bg-moss-bright animate-pulse" />
+                    Commonplace Vault
+                  </span>
+                  <span class="hidden md:inline-flex items-center gap-1 text-moss-muted text-[11px]">
+                    <span class="material-symbols-outlined text-[13px]">
+                      menu_book
+                    </span>
+                    Markdown flat-files
+                  </span>
+                </div>
+                <div class="flex items-center gap-4 text-[11px] text-moss-muted">
+                  <span class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[14px]">
+                      folder_open
+                    </span>
+                    <span>notes/</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </>
+        )
+      }
+    </slot>
+
+    <slot />
+
+    <footer class="w-full bg-surface-container-low mt-space-3xl py-space-xl border-t border-surface-container-highest">
+      <div class="max-w-catalog mx-auto px-gutter-mobile lg:px-gutter-desktop flex flex-col md:flex-row items-center justify-between gap-space-sm text-center md:text-left">
+        <p class="font-serif italic text-sm text-on-surface-variant">
+          Curated by you • Markdown notes • Built with Astro • No algorithms, just books
+        </p>
+        <span class="font-mono text-[11px] uppercase tracking-wider text-outline">
+          Library Shelf System
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>
