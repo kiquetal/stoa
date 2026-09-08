@@ -1,0 +1,399 @@
+---
+import { getCollection, render } from "astro:content";
+import { Image } from "astro:assets";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import {
+  ratingGlyphs,
+  statusLabel,
+  statusClasses,
+  sectionWord,
+  type Status,
+} from "../../lib/display";
+
+export async function getStaticPaths() {
+  const notes = await getCollection("notes");
+  return notes.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const d = entry.data;
+const status = d.status as Status;
+const { Content, headings } = await render(entry);
+const kind = sectionWord(d.type);
+const repoPath = d.repoPath ?? `notes/${entry.id}.md`;
+const doneCount = d.sections.filter((s) => s.done).length;
+---
+
+<BaseLayout variant="reading" title={`${d.title} — Curator's Index`}>
+  <Fragment slot="header">
+    {/* Breadcrumb header for the reading view */}
+    <header class="sticky top-0 left-0 w-full z-40 bg-surface/90 backdrop-blur-md border-b border-surface-container-highest">
+      <div class="max-w-catalog mx-auto px-gutter-mobile lg:px-gutter-desktop h-16 flex items-center justify-between">
+        <div class="flex items-center gap-space-md min-w-0">
+          <a class="inline-flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface font-mono text-xs uppercase tracking-wider transition-colors shrink-0" href="/">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Index</span>
+          </a>
+          <span class="text-outline-variant font-mono text-xs">/</span>
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="px-1.5 py-0.5 rounded bg-surface-container-high font-mono text-[11px] text-on-surface-variant whitespace-nowrap">
+              {d.category}
+            </span>
+            <span class="font-serif italic text-sm text-on-surface truncate">{d.title}</span>
+          </div>
+        </div>
+        <a
+          href={d.repoUrl ?? "#"}
+          class="hidden sm:inline-flex items-center gap-1.5 px-space-xs py-1 rounded bg-surface-container font-mono text-[12px] text-secondary hover:bg-surface-container-high transition-colors shrink-0"
+        >
+          <span class="material-symbols-outlined text-[14px]">code</span>
+          {repoPath}
+        </a>
+      </div>
+    </header>
+  </Fragment>
+
+  <main class="w-full bg-surface">
+    <div class="max-w-catalog mx-auto px-gutter-mobile lg:px-gutter-desktop py-space-xl grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] gap-space-2xl">
+      {/* ---------- Left sidebar ---------- */}
+      <aside class="lg:sticky lg:top-24 self-start space-y-space-lg">
+        {/* Identity card */}
+        <div class="bg-surface-container-low border border-surface-container-highest rounded-lg p-space-md">
+          <div class="flex gap-space-md">
+            {
+              d.cover ? (
+                <Image
+                  src={d.cover}
+                  alt={d.coverAlt ?? d.title}
+                  width={72}
+                  height={104}
+                  class="w-[72px] h-[104px] object-cover rounded border border-surface-container-highest"
+                />
+              ) : (
+                <div class="w-[72px] h-[104px] rounded bg-surface-container-high border border-surface-container-highest flex items-center justify-center">
+                  <span class="material-symbols-outlined text-on-surface-variant text-[28px]">
+                    {d.type === "course" ? "school" : "menu_book"}
+                  </span>
+                </div>
+              )
+            }
+            <div class="min-w-0">
+              <span
+                class:list={[
+                  "inline-block px-space-xs py-0.5 rounded font-mono text-[10px] uppercase tracking-wider font-medium",
+                  statusClasses(status),
+                ]}
+              >
+                {statusLabel(status)}
+              </span>
+              <h1 class="font-serif text-xl leading-snug text-on-surface mt-space-xs">{d.title}</h1>
+              {d.author && <p class="font-serif italic text-sm text-on-surface-variant">{d.author}</p>}
+            </div>
+          </div>
+
+          <dl class="mt-space-md font-mono text-[12px] text-on-surface-variant space-y-1">
+            {d.publisher && (
+              <div class="flex justify-between gap-space-sm">
+                <dt class="text-outline">publisher</dt>
+                <dd class="text-right">{d.publisher}{d.year ? ` · ${d.year}` : ""}</dd>
+              </div>
+            )}
+            {d.format && (
+              <div class="flex justify-between gap-space-sm">
+                <dt class="text-outline">format</dt>
+                <dd>{d.format}{d.pages ? ` · ${d.pages} pp` : ""}</dd>
+              </div>
+            )}
+            {d.isbn && (
+              <div class="flex justify-between gap-space-sm">
+                <dt class="text-outline">isbn</dt>
+                <dd>{d.isbn}</dd>
+              </div>
+            )}
+          </dl>
+
+          {
+            d.rating != null && (
+              <div class="mt-space-sm pt-space-sm border-t border-surface-container-highest flex items-center gap-space-xs">
+                <span class="font-mono text-secondary text-[14px] tracking-widest">
+                  {ratingGlyphs(d.rating)}
+                </span>
+                <span class="font-mono text-[11px] text-on-surface-variant">
+                  ({d.rating.toFixed(1)} rating)
+                </span>
+              </div>
+            )
+          }
+        </div>
+
+        {/* Session progress */}
+        {
+          status === "reading" && (
+            <div class="bg-surface-container-low border border-surface-container-highest rounded-lg p-space-md">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-[11px] uppercase tracking-wider text-outline">Session Progress</span>
+                <span class="font-mono text-[11px] text-secondary font-medium">{d.progress}% finished</span>
+              </div>
+              {d.pages && d.currentPage && (
+                <p class="font-mono text-[11px] text-on-surface-variant mt-space-xs">
+                  Page {d.currentPage} of {d.pages} · {d.pages - d.currentPage} pp remaining
+                </p>
+              )}
+              <div class="h-[3px] w-full bg-surface-container-highest rounded-full overflow-hidden mt-space-xs">
+                <div class="h-full bg-secondary" style={`width: ${d.progress}%`} />
+              </div>
+            </div>
+          )
+        }
+
+        {/* Markdown file ledger */}
+        <div class="bg-surface-container-low border border-surface-container-highest rounded-lg p-space-md">
+          <div class="flex items-center justify-between mb-space-sm">
+            <span class="font-mono text-[11px] uppercase tracking-wider text-outline flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[14px]">description</span>
+              Markdown File Ledger
+            </span>
+            <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-tertiary-fixed text-tertiary-container">Synced</span>
+          </div>
+          <dl class="font-mono text-[12px] space-y-1.5">
+            <div class="flex justify-between gap-space-sm">
+              <dt class="text-outline">Local Path</dt>
+              <dd class="text-secondary truncate">{repoPath}</dd>
+            </div>
+            {d.updated && (
+              <div class="flex justify-between gap-space-sm">
+                <dt class="text-outline">Updated</dt>
+                <dd class="text-on-surface-variant">{d.updated.toISOString().slice(0, 10)}</dd>
+              </div>
+            )}
+          </dl>
+          {
+            d.repoUrl && (
+              <a
+                href={d.repoUrl}
+                class="mt-space-md w-full inline-flex items-center justify-center gap-1.5 px-space-sm py-1.5 bg-ink text-surface rounded font-mono text-[11px] uppercase tracking-wider hover:bg-primary-container transition-colors"
+              >
+                <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+                Open in Repo
+              </a>
+            )
+          }
+        </div>
+
+        {/* Tags */}
+        {
+          d.tags.length > 0 && (
+            <div>
+              <span class="font-mono text-[11px] uppercase tracking-wider text-outline">Thematic Tags</span>
+              <div class="flex flex-wrap gap-x-space-sm gap-y-1 mt-space-xs font-mono text-[12px]">
+                {d.tags.map((t) => (
+                  <span class="text-secondary">#{t}</span>
+                ))}
+              </div>
+            </div>
+          )
+        }
+
+        {/* On this page (headings) */}
+        {
+          headings.length > 0 && (
+            <nav class="hidden lg:block">
+              <span class="font-mono text-[11px] uppercase tracking-wider text-outline">On This Leaf</span>
+              <ul class="mt-space-xs space-y-1 border-l border-surface-container-highest">
+                {headings
+                  .filter((h) => h.depth <= 3)
+                  .map((h) => (
+                    <li style={`padding-left: ${(h.depth - 1) * 0.75}rem`}>
+                      <a
+                        href={`#${h.slug}`}
+                        class="block -ml-px pl-space-sm border-l border-transparent hover:border-secondary font-serif text-sm text-on-surface-variant hover:text-on-surface transition-colors"
+                      >
+                        {h.text}
+                      </a>
+                    </li>
+                  ))}
+              </ul>
+            </nav>
+          )
+        }
+      </aside>
+
+      {/* ---------- Main synthesis column ---------- */}
+      <div class="min-w-0">
+        {/* Recall anchor */}
+        {
+          d.anchor && (
+            <div class="mb-space-xl bg-surface-container-high border border-surface-container-highest rounded-lg p-space-md">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-[11px] uppercase tracking-wider text-on-surface flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[15px] text-secondary">psychology</span>
+                  Active Retrieval Anchor
+                </span>
+                {d.anchor.label && (
+                  <span class="font-mono text-[11px] text-secondary">{d.anchor.label}</span>
+                )}
+              </div>
+              <p class="font-serif italic text-[17px] leading-relaxed text-on-surface-variant mt-space-xs">
+                "{d.anchor.text}"
+              </p>
+            </div>
+          )
+        }
+
+        {/* Rendered synthesis notes */}
+        <article class="prose-notes max-w-reading">
+          <Content />
+        </article>
+
+        {/* Synthesized chapters / modules */}
+        {
+          d.sections.length > 0 && (
+            <section class="mt-space-3xl max-w-reading">
+              <div class="flex items-baseline justify-between mb-space-md">
+                <h2 class="font-serif text-2xl text-on-surface">Synthesized {kind}</h2>
+                <span class="font-mono text-[11px] text-on-surface-variant">
+                  {doneCount} of {d.sections.length} complete
+                </span>
+              </div>
+              <div class="space-y-space-sm">
+                {d.sections.map((s) => (
+                  <div class="bg-surface-container-low border border-surface-container-highest rounded-lg p-space-md">
+                    <div class="flex items-baseline gap-space-sm">
+                      {s.label && (
+                        <span class="font-mono text-[12px] text-secondary shrink-0">{s.label}</span>
+                      )}
+                      <h3 class="font-serif text-lg text-on-surface">{s.title}</h3>
+                      {s.done && (
+                        <span class="material-symbols-outlined text-[16px] text-on-tertiary-container ml-auto">
+                          task_alt
+                        </span>
+                      )}
+                    </div>
+                    {s.note && (
+                      <p class="font-serif italic text-sm text-on-surface-variant mt-1">{s.note}</p>
+                    )}
+                    {s.meta && (
+                      <p class="font-mono text-[11px] text-outline mt-space-xs">{s.meta}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )
+        }
+      </div>
+    </div>
+  </main>
+</BaseLayout>
+
+<style is:global>
+  /* Editorial "commonplace" rendering for the markdown notes body. */
+  .prose-notes {
+    font-family: "Newsreader", serif;
+    color: #1d1b19;
+    font-size: 19px;
+    line-height: 1.7;
+  }
+  .prose-notes > * + * {
+    margin-top: 1.1em;
+  }
+  .prose-notes h1,
+  .prose-notes h2,
+  .prose-notes h3,
+  .prose-notes h4 {
+    font-family: "Newsreader", serif;
+    color: #1d1b19;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    scroll-margin-top: 6rem;
+  }
+  .prose-notes h2 {
+    font-size: 28px;
+    margin-top: 2rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid #e6e2dd;
+  }
+  .prose-notes h3 {
+    font-size: 22px;
+    margin-top: 1.5rem;
+  }
+  .prose-notes p {
+    color: #2c2a28;
+  }
+  .prose-notes a {
+    color: #a23e18;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .prose-notes strong {
+    color: #1e2022;
+    font-weight: 600;
+  }
+  .prose-notes em {
+    font-style: italic;
+  }
+  .prose-notes ul,
+  .prose-notes ol {
+    padding-left: 1.4em;
+  }
+  .prose-notes ul {
+    list-style: disc;
+  }
+  .prose-notes ol {
+    list-style: decimal;
+  }
+  .prose-notes li + li {
+    margin-top: 0.35em;
+  }
+  .prose-notes blockquote {
+    border-left: 3px solid #a23e18;
+    padding: 0.25rem 0 0.25rem 1.25rem;
+    font-style: italic;
+    color: #44474a;
+  }
+  /* Inline code + code blocks: JetBrains Mono on the inset "layer 2" tone. */
+  .prose-notes :not(pre) > code {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.82em;
+    background: #ede6df;
+    border: 1px solid #e3dcd4;
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+  .prose-notes pre {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    background: #ede6df !important;
+    border: 1px solid #e3dcd4;
+    border-radius: 6px;
+    padding: 1rem 1.15rem;
+    overflow-x: auto;
+  }
+  .prose-notes hr {
+    border: 0;
+    border-top: 1px solid #e6e2dd;
+    margin: 2rem 0;
+  }
+  .prose-notes table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  .prose-notes th,
+  .prose-notes td {
+    border: 1px solid #e3dcd4;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  .prose-notes th {
+    background: #f2ede8;
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+</style>
