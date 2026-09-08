@@ -44,35 +44,36 @@ diagrams:
           Enforcer -- "Allow/Deny/Route" --> TrafficOut[Destination]
   - label: "Fig. 2"
     title: "The four authorization components"
-    caption: "The four components from chapter IV: Policy Engine, Trust Engine, and Data Stores in the control plane; Enforcement in the data plane. Trust Engine talks to the Policy Engine, the Policy Engine queries/updates the Data Stores, and Enforcement talks to the Policy Engine."
+    caption: "The four components from chapter IV and how they talk: the Trust Engine feeds the Policy Engine and also uses the Data Stores; the Policy Engine queries/updates the Data Stores; and in the data plane, Enforcement talks with the Policy Engine."
     sourcePath: "chapter-iv.md"
     ascii: |2
-      +===========================================================+
-      |                     CONTROL PLANE                         |
-      |                      (the "brain")                        |
-      |                                                           |
-      |   +----------------+   context   +-------------------+    |
-      |   |  Trust Engine  | ----------> |   Policy Engine   |    |
-      |   +----------------+             +-------------------+    |
-      |                                     |          ^          |
-      |                          queries /  |          |          |
-      |                           updates   v          |          |
-      |                              +-------------------+         |
-      |                              |    Data Stores    |         |
-      |                              +-------------------+         |
-      +=====================================|=====================+
-                                            | pushes policies
-                                            | & configuration
-                                            v
-      +=====================================|=====================+
-      |                      DATA PLANE      |                     |
-      |                     (the "muscle")   v                     |
-      |                              +-------------------+         |
-      |   Incoming Traffic  ------>  |    Enforcement    | ---->   |
-      |                              +-------------------+  Allow/ |
-      |                                                     Deny/  |
-      |                                                     Route  |
-      +===========================================================+
+      +=====================================================================+
+      |                          CONTROL PLANE                              |
+      |                           (the "brain")                             |
+      |                                                                     |
+      |   +----------------+    context    +-------------------+            |
+      |   |  Trust Engine  | ------------> |   Policy Engine   |            |
+      |   +----------------+               +-------------------+            |
+      |          |                            |          ^                  |
+      |          | uses          queries /    |          |                  |
+      |          |                updates     v          |                  |
+      |          |                    +-------------------+                 |
+      |          +------------------> |    Data Stores    |                 |
+      |                               +-------------------+                 |
+      +====================================================|================+
+                                                           |
+                                        talks with         |
+                                        Policy Engine       |
+                                              ^             |
+      +=======================================|=============|===============+
+      |                       DATA PLANE      |             v               |
+      |                      (the "muscle")   |     +----------------+      |
+      |                                       +-----|   Enforcement  |      |
+      |   Incoming Traffic  ---------------------->  |                | -->  |
+      |                                             +----------------+ Allow/|
+      |                                                               Deny/  |
+      |                                                               Route  |
+      +=====================================================================+
 sections:
   - label: "Ch. 1"
     title: "Zero Trust Fundamentals"
