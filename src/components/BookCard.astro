@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import { Image } from "astro:assets";
 import { statusLabel, statusClasses, sectionWord, type Status } from "../lib/display";
 import { sourceUrl as buildSourceUrl } from "../site.config";
 
@@ -50,19 +51,38 @@ const searchBlob = [d.title, d.author, d.category, ...d.tags]
     }
   </div>
 
-  {/* Title + author */}
-  <a href={href} class="mt-space-sm block">
-    <h3 class="font-serif text-xl leading-snug text-on-surface group-hover:text-terracotta transition-colors">
-      {d.title}
-    </h3>
+  {/* Title + author with cover thumbnail */}
+  <a href={href} class="mt-space-sm flex gap-space-sm items-start">
     {
-      d.author && (
-        <p class="font-serif italic text-sm text-on-surface-variant mt-0.5">
-          {d.author}
-          {d.year ? ` · ${d.year}` : ""}
-        </p>
+      d.cover ? (
+        <Image
+          src={d.cover}
+          alt={d.coverAlt ?? d.title}
+          width={56}
+          height={80}
+          class="w-14 h-20 shrink-0 object-cover rounded border border-surface-container-highest"
+        />
+      ) : (
+        <div class="w-14 h-20 shrink-0 rounded bg-surface-container-high border border-surface-container-highest flex items-center justify-center">
+          <span class="material-symbols-outlined text-on-surface-variant text-[22px]">
+            {d.type === "course" ? "school" : "menu_book"}
+          </span>
+        </div>
       )
     }
+    <div class="min-w-0">
+      <h3 class="font-serif text-xl leading-snug text-on-surface group-hover:text-terracotta transition-colors">
+        {d.title}
+      </h3>
+      {
+        d.author && (
+          <p class="font-serif italic text-sm text-on-surface-variant mt-0.5">
+            {d.author}
+            {d.year ? ` · ${d.year}` : ""}
+          </p>
+        )
+      }
+    </div>
   </a>
 
   {/* Summary */}

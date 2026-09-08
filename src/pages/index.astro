@@ -1,5 +1,6 @@
 ---
 import { getCollection } from "astro:content";
+import { Image } from "astro:assets";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import BookCard from "../components/BookCard.astro";
 
@@ -111,22 +112,41 @@ const totalWordsAvg = 1420; // decorative leaf metric
                     </span>
                     <span class="text-secondary">{e.data.progress}% finished</span>
                   </div>
-                  <h3 class="font-serif text-2xl mt-space-sm text-on-surface group-hover:text-terracotta transition-colors">
-                    {e.data.title}
-                  </h3>
-                  {e.data.author && (
-                    <p class="font-serif italic text-sm text-on-surface-variant">
-                      by {e.data.author}
-                      {e.data.year ? ` · ${e.data.year}` : ""}
-                    </p>
-                  )}
-                  {e.data.pages && e.data.currentPage && (
-                    <p class="font-mono text-[11px] text-on-surface-variant mt-space-sm">
-                      Page {e.data.currentPage} of {e.data.pages}
-                    </p>
-                  )}
-                  <div class="h-[3px] w-full bg-surface-container-highest rounded-full overflow-hidden mt-1.5">
-                    <div class="h-full bg-secondary" style={`width: ${e.data.progress}%`} />
+                  <div class="flex gap-space-md mt-space-sm">
+                    {e.data.cover ? (
+                      <Image
+                        src={e.data.cover}
+                        alt={e.data.coverAlt ?? e.data.title}
+                        width={88}
+                        height={126}
+                        class="w-[88px] h-[126px] shrink-0 object-cover rounded border border-surface-container-highest"
+                      />
+                    ) : (
+                      <div class="w-[88px] h-[126px] shrink-0 rounded bg-surface-container-high border border-surface-container-highest flex items-center justify-center">
+                        <span class="material-symbols-outlined text-on-surface-variant text-[32px]">
+                          {e.data.type === "course" ? "school" : "menu_book"}
+                        </span>
+                      </div>
+                    )}
+                    <div class="min-w-0 flex-1">
+                      <h3 class="font-serif text-2xl leading-snug text-on-surface group-hover:text-terracotta transition-colors">
+                        {e.data.title}
+                      </h3>
+                      {e.data.author && (
+                        <p class="font-serif italic text-sm text-on-surface-variant">
+                          by {e.data.author}
+                          {e.data.year ? ` · ${e.data.year}` : ""}
+                        </p>
+                      )}
+                      {e.data.pages && e.data.currentPage && (
+                        <p class="font-mono text-[11px] text-on-surface-variant mt-space-sm">
+                          Page {e.data.currentPage} of {e.data.pages}
+                        </p>
+                      )}
+                      <div class="h-[3px] w-full bg-surface-container-highest rounded-full overflow-hidden mt-1.5">
+                        <div class="h-full bg-secondary" style={`width: ${e.data.progress}%`} />
+                      </div>
+                    </div>
                   </div>
                   {e.data.anchor && (
                     <div class="mt-space-md bg-surface-container-high border border-surface-container-highest rounded p-space-sm">
