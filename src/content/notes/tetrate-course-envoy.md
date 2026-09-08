@@ -89,6 +89,55 @@ diagrams:
           Note over Envoy: Executes Filter Chain for Port 80
           Envoy->>Kernel: New Connection (Dest: 127.0.0.1:80)
           Kernel->>App: Delivers payload to App socket on Port 80
+  - label: "Fig. 5"
+    title: "Listener order of operations"
+    caption: "A connection climbs the stack: Listener Filters (L4/L5) → Network Filters (HCM) → HTTP Filters (L7) → Router."
+    sourcePath: "02-listeners-filters/README.md"
+    mermaid: |
+      graph TD
+          subgraph OSI_L4 [Layer 4 / Transport]
+              A[TCP Connection]
+              B[1. Listener Filters: e.g., TLS Inspector]
+          end
+
+          subgraph Envoy_Bridge [Network Filter Layer]
+              C[2. Network Filters: e.g., HTTP Connection Manager]
+          end
+
+          subgraph OSI_L7 [Layer 7 / Application]
+              D[3. HTTP Filters: e.g., JWT, CORS, Lua]
+              E[Router Filter]
+          end
+
+          A --> B
+          B --> C
+          C -->|Promotes bytes to HTTP| D
+          D --> E
+  - label: "Fig. 6"
+    title: "HTTP listener config hierarchy"
+    caption: "Inside the HTTP Connection Manager, route_config (the routing map) and http_filters (the L7 pipeline) sit side-by-side as siblings; the Router filter bridges them and must be last."
+    sourcePath: "02-listeners-filters/README.md"
+    ascii: |
+      Listener (Ex: Port 80)
+      └── filter_chains
+          └── filters (L4 Network Filters)
+              └── envoy.filters.network.http_connection_manager (HCM)
+                  └── typed_config
+                      │
+                      ├── route_config  ◄─── [ SIBLING 1: The Routing Directory / Map ]
+                      │   └── virtual_hosts
+                      │       └── domains (Matches ":authority" / "Host" header)
+                      │       └── routes (Matches path prefix "/api")
+                      │           └── route
+                      │               ├── cluster (Target backend upstream)
+                      │               ├── retry_policy
+                      │               └── response_headers_to_add
+                      │
+                      └── http_filters  ◄─── [ SIBLING 2: The L7 Processing Pipeline ]
+                          ├── envoy.filters.http.cors
+                          ├── envoy.filters.http.jwt_authn
+                          ├── envoy.filters.http.lua
+                          └── envoy.filters.http.router  ◄── (The terminal filter)
 sections:
   - label: "Module 01"
     title: "Bootstrap"
