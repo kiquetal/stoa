@@ -44,7 +44,7 @@ diagrams:
           Enforcer -- "Allow/Deny/Route" --> TrafficOut[Destination]
   - label: "Fig. 2"
     title: "The four authorization components"
-    caption: "The zero trust architecture's four components split across planes: the Policy Engine, Trust Engine, and Data Stores live in the control plane; Enforcement sits in the data plane applying decisions to live traffic."
+    caption: "The four components from chapter IV: Policy Engine, Trust Engine, and Data Stores in the control plane; Enforcement in the data plane. Trust Engine talks to the Policy Engine, the Policy Engine queries/updates the Data Stores, and Enforcement talks to the Policy Engine."
     sourcePath: "chapter-iv.md"
     ascii: |2
       +===========================================================+
@@ -53,15 +53,12 @@ diagrams:
       |                                                           |
       |   +----------------+   context   +-------------------+    |
       |   |  Trust Engine  | ----------> |   Policy Engine   |    |
-      |   | (risk scoring) |             | (decision point)  |    |
       |   +----------------+             +-------------------+    |
-      |                                    |          ^           |
-      |                       queries /     |          |          |
-      |                        updates      v          |          |
+      |                                     |          ^          |
+      |                          queries /  |          |          |
+      |                           updates   v          |          |
       |                              +-------------------+         |
       |                              |    Data Stores    |         |
-      |                              | user | device |   |         |
-      |                              |    activity logs  |         |
       |                              +-------------------+         |
       +=====================================|=====================+
                                             | pushes policies
@@ -72,8 +69,8 @@ diagrams:
       |                     (the "muscle")   v                     |
       |                              +-------------------+         |
       |   Incoming Traffic  ------>  |    Enforcement    | ---->   |
-      |                              | (PEP / proxy / GW)| Allow/  |
-      |                              +-------------------+  Deny/  |
+      |                              +-------------------+  Allow/ |
+      |                                                     Deny/  |
       |                                                     Route  |
       +===========================================================+
 sections:
