@@ -26,13 +26,13 @@ diagrams:
     sourcePath: "chapter-iv.md"
     mermaid: |
       graph TD
-          subgraph Control_Plane ["Control Plane: The Brain"]
+          subgraph Control_Plane ["Control Plane: The #quot;Brain#quot;"]
               PolicyEngine["Policy Decision Point / Controller"]
               TrustEngine["Trust Engine"]
               DataStore[("Data Stores")]
           end
 
-          subgraph Data_Plane ["Data Plane: The Muscle"]
+          subgraph Data_Plane ["Data Plane: The #quot;Muscle#quot;"]
               Traffic["Incoming Traffic"]
               Enforcer["Policy Enforcement Point / Proxy / Gateway"]
           end
