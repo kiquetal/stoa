@@ -72,6 +72,138 @@ diagrams:
       |   Incoming Traffic  ---> |    Enforcement    | ---> Allow/Deny/Route|
       |                          +-------------------+                      |
       +=====================================================================+
+  - label: "Fig. 3"
+    title: "Trust chain / delegation"
+    caption: "Trust flows down from an offline root trust anchor through intermediate CAs to leaf certs; a verifier walks the chain back up to an anchor it trusts."
+    sourcePath: "chapter-ii.md"
+    ascii: |2
+                       Trust Chain / Delegation
+                       ------------------------
+
+              [ Trust Anchor ]        <- Root CA (self-signed, offline)
+                     |
+                     | signs
+                     v
+              [ Intermediate CA ]     <- delegated authority
+                     |
+                     | signs
+                     v
+              [ Leaf / End-entity ]   <- server, service, workload cert
+                     |
+                     | presents cert
+                     v
+              [ Verifier / Relying party ]
+              walks the chain back up to a trusted anchor
+  - label: "Fig. 4"
+    title: "PKI issuance flow"
+    caption: "An entity generates a keypair, submits a CSR to the RA for identity verification, then the CA signs an X.509 cert the entity presents during the TLS handshake."
+    sourcePath: "chapter-ii.md"
+    ascii: |2
+                    PKI Issuance Flow
+                    -----------------
+
+         [ Entity ] --generate keypair--> (private key stays local)
+              |
+              | build CSR (public key + identity)
+              v
+         [ Registration Authority (RA) ] --verify identity--> OK
+              |
+              v
+         [ Certificate Authority (CA) ] --sign--> [ X.509 Certificate ]
+              |
+              v
+         Entity installs signed cert, presents it during TLS handshake
+  - label: "Fig. 5"
+    title: "Kubernetes trust model"
+    caption: "Kubernetes is a private PKI in action: the cluster root CA signs control-plane and node certs, and nodes join via the CSR API approved and signed by the cluster CA."
+    sourcePath: "chapter-ii.md"
+    ascii: |2
+                       Kubernetes Trust Model
+                       ----------------------
+
+              [ cluster Root CA ]  (/etc/kubernetes/pki/ca.crt)
+                       |
+           +-----------+------------------------+
+           | signs                              | signs
+           v                                    v
+       [ API server cert ]              [ kubelet client certs ]
+       [ etcd peer/client certs ]       [ controller-manager ]
+       [ front-proxy CA ]               [ scheduler, admin.conf ]
+
+        Nodes join via CSR:
+        kubelet -> CertificateSigningRequest -> approved -> signed by cluster CA
+  - label: "Fig. 6"
+    title: "Continuous trust scoring loop"
+    caption: "Instead of binary decisions, Zero Trust continuously monitors actor actions to update a trust score the policy engine uses for adaptive, risk-based access."
+    sourcePath: "chapter-ii.md"
+    ascii: |2
+              Continuous Trust Scoring Loop
+              -----------------------------
+
+         [ Actor action ] --> [ Monitor / collect signals ]
+                                      |
+                                      v
+                           [ Update trust score ]
+                                      |
+                                      v
+                           [ Policy engine evaluates ]
+                                      |
+                    +-----------------+-----------------+
+                    | high trust                        | low trust
+                    v                                   v
+              [ Allow / full access ]        [ Step-up auth / deny / quarantine ]
+  - label: "Fig. 7"
+    title: "What makes an agent"
+    caption: "An agent is an ephemeral, request-time combination of an authenticated user, device, and application — assembled per request and consulted for authorization only."
+    sourcePath: "chapter-iii.md"
+    ascii: |2
+                       What Makes an Agent
+                       -------------------
+
+              [ User / Subject ]   authenticated (MFA, password + OTP...)
+                       +
+              [ Device / Asset ]   authenticated (X.509 device cert)
+                       +
+              [ Application ]      identified
+                       =
+              ============ AGENT ============
+              (assembled per request, used for AUTHORIZATION only)
+  - label: "Fig. 8"
+    title: "Authentication vs. authorization"
+    caption: "Each entity authenticates separately (user via MFA, device via X.509, app identified); the agent is assembled afterward and consulted per request for the authorization decision."
+    sourcePath: "chapter-iii.md"
+    ascii: |2
+              Authentication vs Authorization
+              -------------------------------
+
+         User  --MFA----------------+
+         Device --X.509 cert--------+--> [ each entity AUTHENTICATED separately ]
+         App   --identified---------+
+                                              |
+                                              v
+                                    [ assemble AGENT ]
+                                              |
+                                              v
+                                    [ AUTHORIZATION decision ]
+                                    (per request, not cached)
+  - label: "Fig. 9"
+    title: "Kubernetes AuthN → AuthZ pipeline"
+    caption: "A request to the API server is authenticated (cert/OIDC/token), authorized by RBAC on every call (uncached), then passed through admission control before being persisted."
+    sourcePath: "chapter-iii.md"
+    ascii: |2
+              Kubernetes AuthN -> AuthZ Pipeline
+              ----------------------------------
+
+         Request to API server
+              |
+              v
+         [ Authentication ]   client cert (X.509) / OIDC token / service-account token
+              |   identity = user + groups (or service account)
+              v
+         [ Authorization ]    RBAC / ABAC / Webhook  -> allow or deny
+              |
+              v
+         [ Admission control ] -> mutate / validate -> persist
 sections:
   - label: "Ch. 1"
     title: "Zero Trust Fundamentals"
