@@ -11,6 +11,8 @@ publisher: "Tetrate Academy"
 repo: "kiquetal/tetrate-course-envoy"
 sourcePath: "README.md"
 repoBranch: "main"
+cover: "../../assets/covers/tetrate-course-envoy.png"
+coverAlt: "Envoy logo — CNCF graduated L4/L7 proxy (stacked color mark)"
 summary: "Lifting the hood on Envoy — the L4/L7 proxy that powers modern service meshes. A hands-on lab log covering listeners, filter chains, routing, clusters, and dynamic xDS config, building toward understanding how Istio drives Envoy sidecars under the curtain."
 tags: ["envoy", "service-mesh", "istio", "xds", "proxy", "networking", "observability", "cncf"]
 updated: 2026-09-08
