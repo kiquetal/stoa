@@ -204,6 +204,45 @@ diagrams:
               |
               v
          [ Admission control ] -> mutate / validate -> persist
+  - label: "Fig. 10"
+    title: "Decision flow between the four components"
+    caption: "Enforcement (PEP) asks the Policy Engine (PDP), which pulls context from the Trust Engine and reads/updates the Data Stores, then returns an allow/deny the enforcer acts on."
+    sourcePath: "chapter-iv.md"
+    ascii: |2
+              Decision Flow Between the Four Components
+              -----------------------------------------
+
+         Request --> [ Enforcement / PEP ]
+                           |  asks "may this proceed?"
+                           v
+                    [ Policy Engine / PDP ] --context--> [ Trust Engine ]
+                           |                                   |
+                           | query/update                      | reads signals
+                           v                                   v
+                    [ Data Stores ] <-------------------------- +
+                           |
+         Decision (allow/deny) returned to Enforcement, which acts on the traffic
+  - label: "Fig. 11"
+    title: "Kubernetes as a Zero Trust PDP/PEP"
+    caption: "The API server acts as the PEP: it authenticates the request, calls the authorizer (RBAC/Webhook/OPA) as the PDP, runs admission webhooks, then persists to etcd (the data store)."
+    sourcePath: "chapter-iv.md"
+    ascii: |2
+              Kubernetes as a Zero Trust PDP/PEP
+              ----------------------------------
+
+         kubectl / client request
+              |
+              v
+         [ API server = Enforcement / PEP ]
+              |
+              +--> AuthN (cert / OIDC / token)
+              |
+              +--> [ Authorizer = Policy Engine / PDP ]  RBAC / Webhook / OPA Gatekeeper
+              |
+              +--> [ Admission webhooks ] validate / mutate  (extended policy engine)
+              |
+              v
+         persist to [ etcd = Data Store ]
 sections:
   - label: "Ch. 1"
     title: "Zero Trust Fundamentals"
