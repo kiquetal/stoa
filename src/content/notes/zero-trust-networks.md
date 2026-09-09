@@ -252,13 +252,13 @@ sections:
   - label: "Ch. 2"
     title: "Managing Trust"
     note: "Trust management as the most important component of a zero trust network."
-    sourcePath: "Readme.md"
-    done: false
+    sourcePath: "chapter-ii.md"
+    done: true
   - label: "Ch. 3"
     title: "Context-Aware Agents"
     note: "Fine-grained policy decisions based on identity, device, and resource context."
-    sourcePath: "Readme.md"
-    done: false
+    sourcePath: "chapter-iii.md"
+    done: true
   - label: "Ch. 4"
     title: "Making Authorization Decisions"
     note: "The four components — Enforcement, Policy Engine, Trust Engine, Data Stores — and control plane vs. data plane."
