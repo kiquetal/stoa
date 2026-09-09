@@ -322,6 +322,32 @@ eliminates traditional perimeter-based security and instead requires you to
 - **Improved visibility** — comprehensive insight into network activity makes
   threat detection and compliance auditing more efficient.
 
+## Managing trust (Ch. 2)
+
+Trust has to start somewhere and flow outward. A single offline **trust anchor**
+(the root CA) delegates down a **trust chain** so systems can scale without a
+human vouching for every link. The book's practical stance is blunt: **private
+PKI beats public PKI, and any PKI beats none** — falling back to network-location
+trust is the real failure. Private PKI wins because you own the anchor, issuance
+policy, and rotation; the price is that root-key compromise is catastrophic, so
+the root stays air-gapped and issuance is delegated to intermediates. Kubernetes
+is the concept made concrete — its cluster CA and CSR API are a private PKI in
+action. Trust is also not binary: a **continuous trust score** fed by behavior
+and device posture lets policy adapt to risk instead of granting permanent access.
+
+## Context-aware agents (Ch. 3)
+
+Zero trust's key move is refusing to treat identity as one thing. It assembles an
+**agent** per request from three separately authenticated pieces — the user, the
+device, and the application. Crucially, the agent exists only to make
+**authorization** decisions; authentication happens independently (MFA for users,
+X.509 for devices). That split explains the book's timing rule: authentication is
+**session-oriented** (prove once, reuse), but authorization is
+**request-oriented** and must never be cached — every request is re-judged. The
+payoff is fast revocation: flipping an authorization policy takes effect on the
+next request, whereas rotating credentials is slow, which is why cutting a
+Kubernetes RoleBinding beats trying to revoke a certificate.
+
 ## Making authorization decisions
 
 The zero trust architecture comprises four main components:
