@@ -205,6 +205,35 @@ diagrams:
               v
          [ Admission control ] -> mutate / validate -> persist
   - label: "Fig. 10"
+    title: "Session- vs request-oriented"
+    caption: "Authentication is session-oriented (prove once, reuse across many requests); authorization is request-oriented and uncached — every request is re-evaluated so revocation is instant."
+    sourcePath: "chapter-iii.md"
+    ascii: |2
+         Authentication (session-oriented)      Authorization (request-oriented)
+         ---------------------------------      --------------------------------
+         login once ---> [ session ]            req1 -> evaluate -> allow/deny
+                           |  |  |               req2 -> evaluate -> allow/deny
+                         reused across           req3 -> evaluate -> allow/deny
+                         many requests           (no caching; every request judged)
+  - label: "Fig. 11"
+    title: "Enforcement / Policy Engine separation"
+    caption: "The PEP lives in the data plane and only intercepts and enforces; it invokes the PDP in the control plane, which solely focuses on decision logic — shielding the control plane from direct traffic exposure."
+    sourcePath: "chapter-iv.md"
+    ascii: |2
+              Enforcement and Policy Engine Separation
+              ----------------------------------------
+
+              [ Data Plane ]                [ Control Plane ]
+            +-----------------+           +-------------------+
+            |                 |           |                   |
+            |   Enforcement   |           |   Policy Engine   |
+            |      (PEP)      |---------->|       (PDP)       |
+            |                 |  Invoke   |                   |
+            +-----------------+           +-------------------+
+                     ^
+                     | Intercepts
+            [ User/Client Traffic ]
+  - label: "Fig. 12"
     title: "Decision flow between the four components"
     caption: "Enforcement (PEP) asks the Policy Engine (PDP), which pulls context from the Trust Engine and reads/updates the Data Stores, then returns an allow/deny the enforcer acts on."
     sourcePath: "chapter-iv.md"
@@ -222,7 +251,7 @@ diagrams:
                     [ Data Stores ] <-------------------------- +
                            |
          Decision (allow/deny) returned to Enforcement, which acts on the traffic
-  - label: "Fig. 11"
+  - label: "Fig. 13"
     title: "Kubernetes as a Zero Trust PDP/PEP"
     caption: "The API server acts as the PEP: it authenticates the request, calls the authorizer (RBAC/Webhook/OPA) as the PDP, runs admission webhooks, then persists to etcd (the data store)."
     sourcePath: "chapter-iv.md"
@@ -243,6 +272,50 @@ diagrams:
               |
               v
          persist to [ etcd = Data Store ]
+quiz:
+  - question: "What is the difference between a trust anchor and a trust chain?"
+    answer: "The trust anchor is the authoritative root from which all trust derives — in PKI, the self-signed root CA. The trust chain is the delegated path from that anchor down to the entity being validated, where each link vouches for (signs) the next until you reach a leaf certificate."
+    hint: "One is the root; the other is the path down from it."
+    sourcePath: "chapter-ii.md"
+  - question: "What threat model does Zero Trust adopt, and how does that differ from perimeter security?"
+    answer: "Zero Trust assumes the network is already compromised: it does not trust the local network and treats every actor as a potential attacker until proven otherwise. Perimeter security instead trusts anything inside the boundary. This is the 'always assume breach' stance."
+    sourcePath: "chapter-ii.md"
+  - question: "The book's rule of thumb ranks PKI options — what is the ordering, and why is private PKI preferred?"
+    answer: "private PKI > public PKI > no PKI. Private PKI is preferred because you control the trust anchor, issuance policy, naming, lifetimes, and revocation; it supports short-lived certs and rapid automated rotation; and it can issue certs for private internal names. The worst option is skipping PKI and falling back to network-location trust."
+    hint: "Three tiers, worst is no PKI at all."
+    sourcePath: "chapter-ii.md"
+  - question: "What is the biggest risk of private PKI, and what operational practice mitigates it?"
+    answer: "Root-key compromise is catastrophic — whoever holds the root private key can mint trusted certs for anything. Mitigation: keep the root CA offline / air-gapped and delegate day-to-day issuance to intermediate CAs."
+    sourcePath: "chapter-ii.md"
+  - question: "Explain a continuous trust score as if to a new teammate — and why is it better than a binary allow/deny?"
+    answer: "Instead of permanently labeling an actor 'allowed' or 'denied', the network continuously watches what the actor does and feeds signals (historical behavior, device posture, threat intelligence) into a score. Policy then reacts to the score, so access can tighten or loosen based on current risk — enabling adaptive, risk-based decisions rather than a one-time permanent grant."
+    feynman: true
+    sourcePath: "chapter-ii.md"
+  - question: "In Zero Trust, what is an 'agent', what three things is it assembled from, and what is it used for?"
+    answer: "An agent is an ephemeral, request-time combination of the user (subject), the device (asset), and the application. It is not a stored record but a view assembled per request, and it is consulted solely to make authorization decisions — never for authentication."
+    hint: "user + device + application."
+    sourcePath: "chapter-iii.md"
+  - question: "Why is authentication session-oriented while authorization is request-oriented, and why must authorization not be cached?"
+    answer: "You prove identity once and reuse it for the session's lifetime (session-oriented). Authorization is re-evaluated on every request (request-oriented) so a change in trust score or policy takes effect immediately. Caching an 'allow' would keep granting access after trust dropped or access was revoked, so caching authorization is not recommended — fresh evaluation is what makes revocation fast."
+    sourcePath: "chapter-iii.md"
+  - question: "If you need to cut off access fast, why is changing authorization more effective than rotating credentials?"
+    answer: "Rotating credentials (rekeying, re-issuing certs) is slow and disruptive, and the old credential may stay valid until it propagates or expires. Flipping an authorization policy takes effect on the very next request because authorization is request-oriented and uncached — so revocation is near-instant. In Kubernetes this is why removing a RoleBinding beats trying to revoke a certificate."
+    hint: "One takes effect next request; the other lingers until expiry."
+    sourcePath: "chapter-iii.md"
+  - question: "Name the four components of the Zero Trust authorization architecture and one-line each."
+    answer: "Enforcement (PEP) — sits in the data path, intercepts traffic and executes the decision. Policy Engine (PDP) — compares the request to policy and returns allow/deny, where least-privilege policy lives. Trust Engine — computes the trust score from signals and provides context to the Policy Engine. Data Stores — the source-of-truth inventories (users, devices, activity) that feed the trust engine and are queried/updated by the policy engine."
+    sourcePath: "chapter-iv.md"
+  - question: "Why does Zero Trust put enforcement in the data plane and decision-making in the control plane?"
+    answer: "It keeps a clean separation: the PEP only intercepts and enforces, while the PDP solely focuses on decision logic — which shields the control plane from direct traffic exposure. Keeping decisions in a low-volume control plane and enforcement in a high-volume data plane lets Zero Trust evaluate every request without the policy logic becoming a bottleneck."
+    hint: "The 'brain' vs. the 'muscle'."
+    sourcePath: "chapter-iv.md"
+  - question: "Explain how the four-component model maps onto the Kubernetes API server for a single request."
+    answer: "The API server is the Enforcement/PEP in the request path. It authenticates (cert/OIDC/token), then calls the authorizer (RBAC/ABAC/Webhook, with OPA/Gatekeeper and admission webhooks acting as an external Policy Engine/PDP), and finally persists to etcd — the Data Store. Vanilla k8s has no built-in Trust Engine; that role is filled by add-ons like SPIFFE/SPIRE posture or image-signing signals consumed by admission webhooks."
+    feynman: true
+    sourcePath: "chapter-iv.md"
+  - question: "What is the single most sensitive thing to protect in a Kubernetes private PKI, and why?"
+    answer: "The cluster CA key material and CSR-approval permissions. Whoever can read the cluster CA key or approve arbitrary CSRs can impersonate any component in the cluster, since every component trusts certs chaining to the cluster CA."
+    sourcePath: "chapter-ii.md"
 sections:
   - label: "Ch. 1"
     title: "Zero Trust Fundamentals"
