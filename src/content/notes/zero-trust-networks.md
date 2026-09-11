@@ -472,14 +472,30 @@ eliminates traditional perimeter-based security and instead requires you to
 
 Trust has to start somewhere and flow outward. A single offline **trust anchor**
 (the root CA) delegates down a **trust chain** so systems can scale without a
-human vouching for every link. The book's practical stance is blunt: **private
-PKI beats public PKI, and any PKI beats none** — falling back to network-location
-trust is the real failure. Private PKI wins because you own the anchor, issuance
-policy, and rotation; the price is that root-key compromise is catastrophic, so
-the root stays air-gapped and issuance is delegated to intermediates. Kubernetes
-is the concept made concrete — its cluster CA and CSR API are a private PKI in
-action. Trust is also not binary: a **continuous trust score** fed by behavior
-and device posture lets policy adapt to risk instead of granting permanent access.
+human vouching for every link. Delegation is what lets automated systems grow to
+large scale while staying secure with minimal human intervention.
+
+Zero trust starts from an explicit **threat model**: it assumes the network is
+already compromised, does not trust the local network, and treats every actor as
+a potential attacker until proven otherwise. The chapter catalogs the common
+frameworks for reasoning about attackers — STRIDE, DREAD, PASTA, TRIKE, VAST, and
+MITRE ATT&CK. Paired with this is **least privilege**: grant an entity only the
+minimum permissions it needs to accomplish an action.
+
+The mechanism that carries trust is **PKI**. An entity generates a keypair,
+submits a **CSR** to a **Registration Authority** that verifies identity, and a
+**Certificate Authority** signs an **X.509** certificate the entity later
+presents during the TLS handshake; revocation is handled with CRLs or OCSP. The
+book's practical stance is blunt: **private PKI beats public PKI, and any PKI
+beats none** — falling back to network-location trust is the real failure.
+Private PKI wins because you own the anchor, issuance policy, naming, lifetimes,
+and rotation; the price is that root-key compromise is catastrophic, so the root
+stays air-gapped and issuance is delegated to intermediates. Kubernetes is the
+concept made concrete — its cluster CA and `certificates.k8s.io` CSR API are a
+private PKI in action, which is why the cluster CA key and CSR-approval rights
+are among the most sensitive things to protect. Trust is also not binary: a
+**continuous trust score** fed by behavior, device posture, and threat
+intelligence lets policy adapt to risk instead of granting permanent access.
 
 ## Context-aware agents (Ch. 3)
 
@@ -494,15 +510,22 @@ payoff is fast revocation: flipping an authorization policy takes effect on the
 next request, whereas rotating credentials is slow, which is why cutting a
 Kubernetes RoleBinding beats trying to revoke a certificate.
 
-## Making authorization decisions
+## Making authorization decisions (Ch. 4)
 
 The zero trust architecture comprises four main components:
 
-- **Enforcement** — sits in the data plane and applies decisions to live traffic.
-- **Policy Engine** — the decision point; evaluates policies against context.
-- **Trust Engine** — computes a dynamic trust/risk score (often ML-based) from
-  behavior and activity logs.
-- **Data Stores** — hold user data, device data, and activity logs.
+- **Enforcement** — the Policy Enforcement Point (PEP); sits in the data plane,
+  intercepts the request, and applies the decision to live traffic.
+- **Policy Engine** — the Policy Decision Point (PDP); evaluates policies against
+  context and returns allow/deny. This is where least-privilege policy lives.
+- **Trust Engine** — computes a dynamic trust/risk score from behavior, device
+  posture, and threat-intelligence signals, feeding context to the Policy Engine.
+- **Data Stores** — the source-of-truth inventories of users, devices, and their
+  observed activity that feed the trust engine and are read/updated by the PDP.
+
+A deliberate separation keeps the PEP doing nothing but intercepting and
+enforcing while the PDP focuses solely on decision logic — which shields the
+control plane from direct traffic exposure.
 
 ## Control plane vs. data plane
 
