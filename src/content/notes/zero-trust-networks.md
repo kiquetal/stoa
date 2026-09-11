@@ -534,3 +534,36 @@ and inputs from the trust engine, while the **data plane** (the "muscle")
 enforces those decisions on live traffic. The policy engine pushes policies and
 configuration down to the enforcement point; the trust engine feeds context to
 the policy engine; and the policy engine reads and updates the data stores.
+Keeping decisions in a low-volume control plane and enforcement in a high-volume
+data plane is what lets zero trust judge every request without the policy logic
+becoming a bottleneck. Kubernetes is a working example: the API server is the
+PEP, the authorizer (RBAC/Webhook/OPA) plus admission webhooks act as the PDP,
+and etcd is the data store.
+
+## Trusting devices (Ch. 5)
+
+Devices are the foundational battleground: because a compromised device can lie
+about its own state, zero trust never takes a device's self-report at face value
+and instead leans on hardware-backed, externally verifiable trust. Trust is
+*injected* rather than inherited — devices start from a validated **golden
+image** and use **secure boot** to check firmware and loader signatures, then
+carry a unique, CA-signed **X.509** certificate that ties them back to inventory.
+
+The private key is the crown jewel. A software key sitting on disk is vulnerable
+to theft, so the gold standard is a secure cryptoprocessor — an **HSM** or
+**TPM** — that generates and stores the key in hardware where it never leaves the
+chip. TPMs use **envelope encryption** for bulk data: encrypt with a fast
+symmetric AES key, then wrap that key with the TPM's **Storage Root Key**, so the
+data is bound to that specific device. **PCRs** let a key be *sealed* to a
+known-good configuration, and **remote attestation** signs PCR quotes with the
+**Endorsement Key** to prove host identity and software state to a remote party.
+
+Provisioning is about how a device earns its first certificate. For static
+infrastructure a **human-in-the-loop TOTP** is most secure, with the rule that
+people only approve requests they themselves initiated. For dynamic, auto-scaling
+fleets there is no human, so trust follows a **split-responsibility** model:
+independent factors — the resource manager asserting it started the host, plus
+the device's TPM/image key, IP, and certificate properties — must all agree, so
+no single compromised component can grant access alone. Legacy gear that can't
+run an agent (SCADA, HVAC) gets a **hardware supplicant** — a TPM-equipped box
+that plugs in and becomes the zero trust endpoint on the device's behalf.
