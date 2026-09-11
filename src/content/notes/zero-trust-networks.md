@@ -272,6 +272,55 @@ diagrams:
               |
               v
          persist to [ etcd = Data Store ]
+  - label: "Fig. 14"
+    title: "TOTP human-in-the-loop signing"
+    caption: "For static infrastructure a human supplies a TOTP that flows through the provisioning service to the signing service; only after verification is a signed certificate issued to the new device."
+    sourcePath: "chapter-v.md"
+    ascii: |2
+             [ Human ]
+                 |
+                 | (1) Provides TOTP
+                 v
+             [ Provisioning Service ]
+                 |
+                 | (2) Forwards request + TOTP
+                 v
+             [ Signing Service ] <-----> [ Verification ]
+                 |
+                 | (3) Signed Certificate
+                 v
+             [ New Device ]
+  - label: "Fig. 15"
+    title: "Split-responsibility automated provisioning"
+    caption: "With no human in the loop, trust is sourced from multiple disparate factors — the resource manager plus the device's TPM/image key, IP, and cert properties — so no single compromised component can grant access alone."
+    sourcePath: "chapter-v.md"
+    ascii: |2
+             [ Resource Manager ]        [ New Device / Image ]
+                      |                            |
+                      | (1) Request                | (2) TPM/Image Key
+                      v                            v
+                 [ Signing Service ] <-------------+
+                 (Checks factors: RM + TPM + IP + Cert Props)
+                      |
+                      | (3) Validates & Signs
+                      v
+                 [ Issues Cert ]
+  - label: "Fig. 16"
+    title: "TPM envelope encryption"
+    caption: "A hybrid scheme: bulk data is encrypted with a fast symmetric AES key, and that AES key is wrapped with the TPM's Storage Root Key — binding the data to hardware whose private key never leaves the chip."
+    sourcePath: "chapter-v.md"
+    ascii: |2
+             [ Bulk Data ]
+                   |
+                   | (1) Encrypt with AES Key (Symmetric)
+                   v
+            [ Encrypted Data ]
+
+             [ AES Key ]
+                   |
+                   | (2) Wrap with TPM's SRK (Asymmetric/PKI-style)
+                   v
+           [ Wrapped AES Key ]
 quiz:
   - question: "What is the difference between a trust anchor and a trust chain?"
     answer: "The trust anchor is the authoritative root from which all trust derives — in PKI, the self-signed root CA. The trust chain is the delegated path from that anchor down to the entity being validated, where each link vouches for (signs) the next until you reach a leaf certificate."
@@ -316,6 +365,30 @@ quiz:
   - question: "What is the single most sensitive thing to protect in a Kubernetes private PKI, and why?"
     answer: "The cluster CA key material and CSR-approval permissions. Whoever can read the cluster CA key or approve arbitrary CSRs can impersonate any component in the cluster, since every component trusts certs chaining to the cluster CA."
     sourcePath: "chapter-ii.md"
+  - question: "Why can't a device be trusted to report its own security status, and what does that imply for Zero Trust?"
+    answer: "Because a compromised device can lie about its own state, so its self-reported status is untrustworthy. This is why devices are the foundational battleground: Zero Trust needs hardware-backed, externally verifiable mechanisms (secure boot, TPM attestation, CA-signed certs) to establish and validate device trust rather than taking the device's word for it."
+    sourcePath: "chapter-v.md"
+  - question: "Where should a device's private key live, and why is a TPM/HSM the gold standard?"
+    answer: "The private key should be generated and stored inside a secure cryptoprocessor (HSM or TPM), never in an unprotected file guarded only by OS permissions. In hardware the private key never leaves the chip, so even a compromised OS or a stolen disk image cannot exfiltrate it — unlike a software-based X.509 key that is vulnerable to theft."
+    hint: "Keep the key in silicon, not on disk."
+    sourcePath: "chapter-v.md"
+  - question: "In automated provisioning, what is the 'split responsibility' model and what problem does it solve?"
+    answer: "When there is no human to authorize, trust is sourced from multiple disparate components at once — the resource manager (asserting 'I turned this host on'), plus the device's TPM/image key, IP, and certificate properties. Requiring several independent factors means no single compromised component (a stolen image or an attacker-controlled resource manager) can grant access on its own."
+    sourcePath: "chapter-v.md"
+  - question: "When is a human-in-the-loop TOTP appropriate for signing, and what rule keeps it safe?"
+    answer: "For static infrastructure where manual authorization is feasible and most secure. The key rule is that humans should only approve requests they themselves initiated — this prevents fatigue-driven rubber-stamping, and a TOTP failure is treated as a significant security event."
+    sourcePath: "chapter-v.md"
+  - question: "Explain TPM envelope encryption as if to a new teammate — why not just encrypt everything with the TPM key?"
+    answer: "Asymmetric operations are slow, so you don't encrypt bulk data directly with the TPM key. Instead you encrypt the data with a fast symmetric AES key, then 'wrap' (encrypt) that small AES key with the TPM's Storage Root Key. To read the data the TPM unwraps the AES key using its private key, which never leaves the hardware. You get symmetric speed plus asymmetric protection, and the data is bound to that specific device."
+    feynman: true
+    sourcePath: "chapter-v.md"
+  - question: "What are PCRs and sealing, and how does remote attestation use them?"
+    answer: "Platform Configuration Registers (PCRs) store hashes of system state such as BIOS and boot records. 'Sealing' data to specific PCR values means a key only unlocks when the machine is in a known-good configuration. Remote attestation uses the TPM's Endorsement Key (EK) to sign quotes of the current PCRs, proving both host identity and software state to a remote party."
+    sourcePath: "chapter-v.md"
+  - question: "How does Zero Trust extend to legacy devices that can't run a modern security agent?"
+    answer: "You move the Zero Trust termination point as close to the device as possible using a hardware supplicant — a dedicated TPM-equipped device that plugs directly into the legacy host (e.g. SCADA or HVAC systems) and acts as the secure Zero Trust endpoint on its behalf."
+    hint: "Put the trust boundary in a plug-in box next to the old gear."
+    sourcePath: "chapter-v.md"
 sections:
   - label: "Ch. 1"
     title: "Zero Trust Fundamentals"
@@ -340,8 +413,8 @@ sections:
   - label: "Ch. 5"
     title: "Trusting Devices"
     note: "Establishing and validating device identity and health."
-    sourcePath: "Readme.md"
-    done: false
+    sourcePath: "chapter-v.md"
+    done: true
   - label: "Ch. 6"
     title: "Trusting Identities"
     note: "Identifying and trusting users separately from devices."
