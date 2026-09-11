@@ -1,0 +1,56 @@
+@startuml C4_Level1_SystemContext
+' =============================================================================
+' C4 Level 1 — System Context Diagram
+' =============================================================================
+' Shows the Curator's Index (stoa) as a single black box, surrounded by the
+' people who use it and the external systems it depends on.
+'
+' AUDIENCE: Everyone — the note author, developers, new joiners.
+'
+' Based on the template: using-plantuml-intellij/c4_1_context.puml
+' Renderable in: real PlantUML (via the C4 include) AND the Diagram Studio CLI
+' (which ignores the !include and styles by inferred role).
+' =============================================================================
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title System Context Diagram - Curator's Index (stoa)
+
+' =============================================================================
+' PEOPLE (actors who interact with the system)
+' =============================================================================
+
+Person(curator, "Curator / Author", "Writes study notes as Markdown, authors frontmatter (progress, sections, diagrams, quizzes), and builds the site.")
+Person(reader, "Reader", "Browses the catalog, filters resources, and studies detail pages with figures and active-recall decks.")
+
+' =============================================================================
+' YOUR SYSTEM (the system being documented — shown as a single box)
+' =============================================================================
+
+System(curators_index, "Curator's Index (stoa)", "An Astro + Tailwind notes platform. Each learning resource is a Markdown file whose frontmatter drives a catalog card and a rich detail page with sections, figures, and quizzes.")
+
+' =============================================================================
+' EXTERNAL SYSTEMS (systems it depends on but doesn't own/control)
+' =============================================================================
+
+System_Ext(github, "GitHub", "Hosts companion source repos. Powers the 'View Source' deep-links (repo + sourcePath -> blob/branch/path) on note and section entries.")
+System_Ext(qa_generator, "qa-generator Agent", "Kiro agent that reads a note and its companion source files, then appends grounded quiz: and diagrams: arrays into the note's frontmatter.")
+
+' =============================================================================
+' RELATIONSHIPS
+' =============================================================================
+
+' Curator interactions
+Rel(curator, curators_index, "Authors Markdown notes + frontmatter, runs the build", "Astro CLI / filesystem")
+
+' Reader interactions
+Rel(reader, curators_index, "Browses catalog, filters, reads detail pages", "HTTPS")
+
+' System -> external
+Rel(curators_index, github, "Deep-links to source notes via View Source", "HTTPS")
+
+' qa-generator augments the content the system renders
+Rel(qa_generator, curators_index, "Writes quiz + diagram frontmatter into notes", "filesystem")
+Rel(qa_generator, github, "Reads companion source note files", "HTTPS")
+
+@enduml

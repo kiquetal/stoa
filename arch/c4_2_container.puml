@@ -1,0 +1,96 @@
+@startuml C4_Level2_Container
+' =============================================================================
+' C4 Level 2 — Container Diagram
+' =============================================================================
+' Zooms INTO the Curator's Index (stoa) from Level 1. Shows the build-time and
+' runtime units that make up the site: the Astro pages, the content collection,
+' the schema, shared UI, assets, and the external systems.
+'
+' AUDIENCE: Developers, the note author.
+'
+' TERMINOLOGY: "Container" here = a cohesive unit of the app (a page group, the
+' content collection, the schema, the asset store) — NOT a Docker container.
+' stoa is a static-site generator, so most "containers" are build-time modules
+' that Astro compiles into static HTML.
+'
+' Based on the template: using-plantuml-intellij/c4_2_container.puml
+' =============================================================================
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Container Diagram - Curator's Index (stoa)
+
+' =============================================================================
+' PEOPLE (carried over from Level 1 for context)
+' =============================================================================
+
+Person(curator, "Curator / Author", "Authors Markdown notes and frontmatter, runs the build.")
+Person(reader, "Reader", "Browses and studies the generated site.")
+
+' =============================================================================
+' SYSTEM BOUNDARY — everything inside is part of stoa
+' =============================================================================
+
+System_Boundary(stoa, "Curator's Index (stoa)") {
+
+    ' --- Build tool / dev server (entry point) ---
+    Container(astro_app, "Astro App", "Astro 5", "Static-site generator. Runs the dev server (astro dev) and compiles content + pages into static HTML (astro build). Integrates Tailwind, MDX, and Shiki.")
+
+    ' --- Pages (the routes Astro renders) ---
+    Container(index_page, "Catalog Page", "Astro (index.astro)", "The index: reading-progress metrics, reading desks, and client-side filtering over the notes collection.")
+    Container(detail_page, "Detail Page", "Astro ([slug].astro)", "Per-note page: sections (chapters/modules), a tabbed Figures section, and the active-recall quiz deck.")
+
+    ' --- Shared UI ---
+    Container(base_layout, "BaseLayout", "Astro layout", "Site-wide shell (head, nav, styling) wrapping every page.")
+    Container(components, "UI Components", "Astro (BookCard, ...)", "Catalog card and other reusable UI pieces.")
+    Container(display_lib, "Display Helpers", "TypeScript (lib/display.ts)", "Formatting helpers for status, progress, and labels.")
+    Container(site_config, "Site Config", "TypeScript (site.config.ts)", "githubUser/defaultBranch + repoUrl()/sourceUrl() helpers that build GitHub deep-links.")
+
+    ' --- Content + schema (the data layer) ---
+    ContainerDb(notes_collection, "Notes Content Collection", "Markdown/MDX files", "One Markdown file per book/course. Frontmatter drives cards + detail pages; the body is the synthesis.")
+    Container(content_schema, "Content Schema", "Zod (content/config.ts)", "Validates note frontmatter: identity, status/progress, sections, diagrams (mermaid|ascii), and quiz items.")
+    ContainerDb(cover_assets, "Cover Assets", "Images (assets/covers)", "Cover art referenced by notes and optimized by Astro's image pipeline.")
+}
+
+' =============================================================================
+' EXTERNAL SYSTEMS
+' =============================================================================
+
+System_Ext(github, "GitHub", "Companion source repos; target of the 'View Source' deep-links.")
+System_Ext(qa_generator, "qa-generator Agent", "Kiro agent that appends quiz + diagram frontmatter into notes.")
+
+' =============================================================================
+' RELATIONSHIPS
+' =============================================================================
+
+' --- People -> app ---
+Rel(curator, astro_app, "Authors notes, runs dev/build", "Astro CLI / filesystem")
+Rel(reader, index_page, "Browses and filters the catalog", "HTTPS")
+Rel(reader, detail_page, "Studies figures and quizzes", "HTTPS")
+
+' --- Build orchestration ---
+Rel(astro_app, index_page, "Renders the catalog route")
+Rel(astro_app, detail_page, "Renders a page per note (getStaticPaths)")
+
+' --- Pages -> shared UI ---
+Rel(index_page, base_layout, "Wraps in")
+Rel(detail_page, base_layout, "Wraps in")
+Rel(index_page, components, "Renders catalog cards with")
+Rel(index_page, display_lib, "Formats status/progress via")
+Rel(detail_page, display_lib, "Formats labels via")
+Rel(detail_page, site_config, "Builds View Source links via")
+Rel(components, site_config, "Builds repo links via")
+
+' --- Pages -> content ---
+Rel(index_page, notes_collection, "Reads all notes (getCollection)", "Astro content API")
+Rel(detail_page, notes_collection, "Reads one note by slug", "Astro content API")
+Rel(notes_collection, content_schema, "Validated by", "build-time")
+Rel(index_page, cover_assets, "References cover images")
+Rel(detail_page, cover_assets, "References cover images")
+
+' --- Deep-links + agent ---
+Rel(site_config, github, "Generates blob/branch/path links to", "HTTPS")
+Rel(qa_generator, notes_collection, "Writes quiz + diagram frontmatter into", "filesystem")
+Rel(qa_generator, github, "Reads companion source notes from", "HTTPS")
+
+@enduml
